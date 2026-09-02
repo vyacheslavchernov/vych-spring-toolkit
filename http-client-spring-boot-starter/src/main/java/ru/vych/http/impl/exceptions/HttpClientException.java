@@ -1,8 +1,16 @@
 package ru.vych.http.impl.exceptions;
 
 /**
- * Корневое исключение клиента.
- * Все другие исключения должны наследоваться от него.
+ * Корневое checked-исключение для всех ошибок HTTP-клиента.
+ * <p>
+ * Все специализированные исключения (конфигурация, выполнение запроса,
+ * обработка ответа, невалидный запрос) наследуются от этого класса.
+ * </p>
+ *
+ * @see HttpClientConfigurationException
+ * @see HttpClientExecuteRequestException
+ * @see HttpClientHandleResponseException
+ * @see HttpClientInvalidRequestException
  */
 public class HttpClientException extends Exception {
     public HttpClientException(String message) {

@@ -13,11 +13,25 @@ import ru.vych.logger.impl.appenders.LogAppender;
 import java.util.List;
 
 /**
- * Автоконфиг для модуля логирования
+ * Автоматическая конфигурация модуля логирования Spring Boot.
+ *
+ * <p>Регистрирует основные бины: {@link ru.vych.logger.impl.LogService} и
+ * {@code ConsoleAppender} (при условии включённой конфигурации).
+ *
+ * @see LogProperties
+ * @see ru.vych.logger.impl.LogService
+ * @see ru.vych.logger.impl.appenders.ConsoleAppender
  */
 @AutoConfiguration
 @EnableConfigurationProperties(LogProperties.class)
 public class LoggerAutoConfiguration {
+    /**
+     * Создаёт главный сервис логирования.
+     *
+     * @param appenders   список всех зарегистрированных аппендеров
+     * @param logFilters  список всех зарегистрированных фильтров
+     * @return экземпляр {@link ru.vych.logger.impl.LogService}
+     */
     @Bean
     @ConditionalOnMissingBean
     public LogService logService(List<LogAppender> appenders, List<LogFilter> logFilters) {
@@ -25,11 +39,13 @@ public class LoggerAutoConfiguration {
     }
 
     /**
-     * Бин для записи логов в терминал.
-     * Поставляется с модулем и по умолчанию всегда активен.
+     * Создаёт аппендер для записи логов в консоль (терминал).
+     *
+     * <p>Активирован по умолчанию (при отсутствии конфигурации).
+     * Управление через свойство {@code logger.console.enabled}.
      *
      * @param properties настройки из application.yaml
-     * @return
+     * @return экземпляр {@link ConsoleAppender}
      */
     @Bean
     @ConditionalOnProperty(
