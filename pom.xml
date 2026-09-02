@@ -4,14 +4,69 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>Vych Spring Toolkit</name>
+    <description>Any-key toolkit for use with Spring</description>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.6</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
     <groupId>ru.vych</groupId>
     <artifactId>vych-spring-toolkit</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.4-RELEASE</version>
+
+    <packaging>pom</packaging>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <modules>
+        <module>vych-spring-toolkit-bom</module>
+        <module>http-client-spring-boot-starter</module>
+        <module>logger-spring-boot-starter</module>
+        <module>vych-spring-toolkit-tests</module>
+    </modules>
+
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/vyacheslavchernov/vych-spring-toolkit</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/vyacheslavchernov/vych-spring-toolkit</url>
+        </repository>
+    </distributionManagement>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--
+                Версии внутренних модулей toolkit.
+                Позволяет не указывать version в зависимостях
+                между собственными стартерами.
+            -->
+            <dependency>
+                <groupId>ru.vych</groupId>
+                <artifactId>logger-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ru.vych</groupId>
+                <artifactId>http-client-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
 </project>
