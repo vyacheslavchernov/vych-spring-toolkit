@@ -16,7 +16,7 @@
 
     <groupId>ru.vych</groupId>
     <artifactId>vych-spring-toolkit</artifactId>
-    <version>0.0.4-SNAPSHOT</version>
+    <version>0.0.4-RELEASE</version>
 
     <packaging>pom</packaging>
 
