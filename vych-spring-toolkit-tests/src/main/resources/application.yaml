@@ -1,0 +1,7 @@
+logger:
+  console:
+    level: DEBUG
+    enableColors: true
+    includeEntities: true
+    prettyEntities: true
+    dimEntities: true
