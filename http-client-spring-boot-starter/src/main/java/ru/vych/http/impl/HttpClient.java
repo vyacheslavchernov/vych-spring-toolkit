@@ -7,23 +7,62 @@ import ru.vych.http.impl.exceptions.HttpClientException;
 import java.net.CookieHandler;
 
 /**
- * Интерфейс клиента
+ * Основной интерфейс HTTP-клиента.
+ * <p>
+ * Предоставляет метод для выполнения HTTP-запросов ({@link #execute(Request)})
+ * и получения обработчика cookie. Реализация — {@link ru.vych.http.impl.HttpClientImpl}.
+ * </p>
+ * <p>
+ * Клиент поддерживает pipeline-обработку запросов и ответов через
+ * {@link ru.vych.http.impl.interceptors.RequestInterceptor} и
+ * {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.
+ * </p>
+ *
+ * @see ru.vych.http.impl.HttpClientImpl
+ * @see ru.vych.http.config.HttpClientBuilder
  */
 public interface HttpClient {
+
     /**
-     * Выполнить http запрос
+     * Выполняет HTTP-запрос, описанный в переданном {@link Request}, и возвращает результат.
+     * <p>
+     * Процесс выполнения:
+     * <ol>
+     *   <li>Последовательно вызываются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
+     *   <li>Формируется и отправляется HTTP-запрос через {@code java.net.http.HttpClient}.</li>
+     *   <li>Ответ парсится: body десериализуется в {@link Request#getResponseClass()} (если указан) или возвращается как raw-байты.</li>
+     *   <li>Последовательно вызываются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
+     * </ol>
+     * </p>
      *
-     * @param request запрос для выполнения
-     * @return результат выполнения запроса
+     * @param request запрос для выполнения; не должен быть {@code null}
+     * @return результат выполнения запроса ({@link Response}); никогда не {@code null}
+     * @throws ru.vych.http.impl.exceptions.HttpClientException если произошла ошибка при выполнении запроса,
+     *         обработке тела или десериализации ответа
+     * @throws ru.vych.http.impl.exceptions.HttpClientInvalidRequestException если запрос не валиден
+     *         (не указан метод, для POST не указан Content-Type и т. п.)
      */
     Response execute(Request request) throws HttpClientException;
 
     /**
-     * Получить обработчик cookies клиента
+     * Возвращает обработчик cookie текущего клиента.
+     * <p>
+     * Возвращает {@code null}, если cookie-хранилище не было настроено
+     * (т. е. {@link ru.vych.http.config.HttpClientConfig#storeCookies} равно {@code false}).
+     * </p>
      *
-     * @return обработчик cookies
+     * @return обработчик cookie или {@code null}, если не настроен
      */
     CookieHandler getCookieHandler();
 
+    /**
+     * Возвращает уникальный идентификатор данного экземпляра клиента.
+     * <p>
+     * Генерируется один раз при создании клиента и не меняется на протяжении
+     * всего времени жизни экземпляра. Используется в логировании.
+     * </p>
+     *
+     * @return UUID клиента в виде строки
+     */
     String getClientUuid();
 }

@@ -1,5 +1,25 @@
 package ru.vych.http.impl.common;
 
+/**
+ * Константы стандартных MIME Media Types (IANA Media Types).
+ * <p>
+ * Класс не имеет публичных конструкторов и не может быть инстанциирован.
+ * Содержит только {@code public static final String} константы для основных
+ * MIME-типов, сгруппированных по категориям:
+ * </p>
+ * <ul>
+ *   <li>Application — данные приложений (JSON, XML, PDF, архивы и т. д.)</li>
+ *   <li>Text — текстовые данные</li>
+ *   <li>Image — изображения</li>
+ *   <li>Audio — аудио</li>
+ *   <li>Video — видео</li>
+ *   <li>Multipart — составные MIME-типы</li>
+ *   <li>Font — шрифты</li>
+ * </ul>
+ *
+ * @see Request.Builder#contentType
+ * @see ru.vych.http.impl.entities.Header
+ */
 public final class MediaType {
     // Wildcard
     public static final String WILDCARD = "*/*";
