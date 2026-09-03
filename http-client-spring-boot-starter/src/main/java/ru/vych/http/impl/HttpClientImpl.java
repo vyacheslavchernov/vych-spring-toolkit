@@ -74,7 +74,7 @@ public class HttpClientImpl implements HttpClient {
     private final ObjectMapper mapper = new ObjectMapper();
 
     private final HttpClientConfig config;
-    private final LogService logService;
+    private final HttpClientLogger httpClientLogger;
     private final List<RequestInterceptor> requestInterceptors = new ArrayList<>();
     private final List<ResponseInterceptor> responseInterceptors = new ArrayList<>();
 
@@ -92,14 +92,14 @@ public class HttpClientImpl implements HttpClient {
      * @param requestInterceptors  список перехватчиков запросов; может быть пустым
      * @param responseInterceptors список перехватчиков ответов; может быть пустым
      * @throws ru.vych.http.impl.exceptions.HttpClientConfigurationException если некорректная конфигурация
-     *         или ошибка создания cookie-хранилища
+     *                                                                       или ошибка создания cookie-хранилища
      */
     public HttpClientImpl(
             HttpClientConfig config, LogService logService,
             List<RequestInterceptor> requestInterceptors, List<ResponseInterceptor> responseInterceptors
     ) throws HttpClientException {
         this.config = config;
-        this.logService = logService;
+        this.httpClientLogger = new HttpClientLogger(config, logService);
         this.requestInterceptors.addAll(requestInterceptors);
         this.responseInterceptors.addAll(responseInterceptors);
 
@@ -110,7 +110,7 @@ public class HttpClientImpl implements HttpClient {
                     .followRedirects(config.getAllowRedirects() ? ALWAYS : NEVER)
                     .version(config.getVersion());
         } catch (IllegalArgumentException e) {
-            logService.error(
+            httpClientLogger.error(
                     config.getServiceCode(), clientUuid, "Ошибка инициализации клиента",
                     config, e.toString()
             );
@@ -124,7 +124,7 @@ public class HttpClientImpl implements HttpClient {
                 clientBuilder.cookieHandler(config.getCookieHandlerClass().getConstructor().newInstance());
             } catch (InstantiationException | NoSuchMethodException |
                      InvocationTargetException | IllegalAccessException e) {
-                logService.error(
+                httpClientLogger.error(
                         config.getServiceCode(), clientUuid, "Ошибка инициализации клиента",
                         config, e.toString()
                 );
@@ -141,7 +141,10 @@ public class HttpClientImpl implements HttpClient {
             );
         }
 
-        logService.info(config.getServiceCode(), clientUuid, "Инициализирован Http-Client", config);
+        httpClientLogger.info(
+                true, config.getServiceCode(), clientUuid,
+                "Инициализирован Http-Client", config
+        );
     }
 
     /**
@@ -160,13 +163,13 @@ public class HttpClientImpl implements HttpClient {
     @Override
     public Response execute(Request request) throws HttpClientException {
         requestInterceptors.forEach(filter -> {
-            logService.debug(
+            httpClientLogger.debug(
                     config.getServiceCode(), request.getUuid(),
                     "Выполнение фильтра запроса", filter.getClass().getCanonicalName()
             );
             filter.handle(this, request);
         });
-        logService.debug(config.getServiceCode(), request.getUuid(), "Отправка Http-запроса", request);
+        httpClientLogger.debug(config.getServiceCode(), request.getUuid(), "Отправка Http-запроса", request);
 
         Response response = switch (request.getMethod()) {
             case GET -> get(request);
@@ -174,13 +177,13 @@ public class HttpClientImpl implements HttpClient {
         };
 
         responseInterceptors.forEach(filter -> {
-            logService.debug(
+            httpClientLogger.debug(
                     config.getServiceCode(), request.getUuid(),
                     "Выполнение фильтра ответа", filter.getClass().getCanonicalName()
             );
             filter.handle(this, response);
         });
-        logService.debug(config.getServiceCode(), request.getUuid(), "Получен ответ", response);
+        httpClientLogger.debug(config.getServiceCode(), request.getUuid(), "Получен ответ", response);
 
         return response;
     }
@@ -194,7 +197,7 @@ public class HttpClientImpl implements HttpClient {
         try {
             rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
-            logService.error(
+            httpClientLogger.error(
                     config.getServiceCode(), clientUuid, "Ошибка при отправке запроса",
                     request, e.toString()
             );
@@ -212,7 +215,7 @@ public class HttpClientImpl implements HttpClient {
         try {
             rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
-            logService.error(
+            httpClientLogger.error(
                     config.getServiceCode(), clientUuid, "Ошибка при отправке запроса",
                     request, e.toString());
             throw new HttpClientExecuteRequestException("Ошибка при отправке запроса", e);
@@ -258,7 +261,7 @@ public class HttpClientImpl implements HttpClient {
             );
 
         } catch (JsonProcessingException e) {
-            logService.error(
+            httpClientLogger.error(
                     config.getServiceCode(), clientUuid, "Ошибка при обработке тела запроса",
                     payload, e.toString());
             throw new HttpClientHandleResponseException("Ошибка при обработке тела запроса", e);
@@ -347,7 +350,7 @@ public class HttpClientImpl implements HttpClient {
         try {
             return mapper.readValue(body, responseClass);
         } catch (JsonProcessingException e) {
-            logService.error(
+            httpClientLogger.error(
                     config.getServiceCode(), clientUuid, "Ошибка при обработке ответа",
                     body, responseClass, e.toString());
             throw new HttpClientHandleResponseException("Ошибка при обработке ответа", e);

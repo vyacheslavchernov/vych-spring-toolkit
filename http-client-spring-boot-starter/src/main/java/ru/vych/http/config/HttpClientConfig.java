@@ -108,4 +108,13 @@ public class HttpClientConfig {
      * @see java.net.http.HttpClient.Version
      */
     private HttpClient.Version version = HttpClient.Version.HTTP_1_1;
+
+    /**
+     * Включает логирование запросов и ответов, отправляемых клиентом.
+     * <p>
+     * Если {@code true}, запросы и ответы логируются через {@code LogService}
+     * из {@code logger-spring-boot-starter}. По умолчанию логирование выключено.
+     * </p>
+     */
+    private boolean logRequests = true;
 }
