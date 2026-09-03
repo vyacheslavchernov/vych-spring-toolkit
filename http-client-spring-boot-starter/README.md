@@ -170,17 +170,18 @@ List<Header> headers = response.getHeaders();
 
 ### HttpClientConfig
 
-| Свойство | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `serviceCode` | `String` | *(обязательно)* | Код сервиса для логирования |
-| `root` | `String` | `""` | Корневой URL (base URL) для всех запросов |
-| `timeout` | `int` | `15000` | Тайм-аут в миллисекундах |
-| `headers` | `Map<String, String>` | `{}` | Дефолтные заголовки для всех запросов |
-| `cookies` | `Map<String, String>` | `{}` | Дефолтные cookie, устанавливаемые при инициализации |
-| `storeCookies` | `boolean` | `false` | Сохранять cookie из ответов |
+| Свойство | Тип | По умолчанию          | Описание |
+|---|---|-----------------------|---|
+| `serviceCode` | `String` | *(обязательно)*       | Код сервиса для логирования |
+| `root` | `String` | `""`                  | Корневой URL (base URL) для всех запросов |
+| `timeout` | `int` | `15000`               | Тайм-аут в миллисекундах |
+| `headers` | `Map<String, String>` | `{}`                  | Дефолтные заголовки для всех запросов |
+| `cookies` | `Map<String, String>` | `{}`                  | Дефолтные cookie, устанавливаемые при инициализации |
+| `storeCookies` | `boolean` | `false`               | Сохранять cookie из ответов |
 | `cookieHandlerClass` | `Class<? extends CookieHandler>` | `CookieManager.class` | Класс обработчика cookie |
-| `allowRedirects` | `boolean` | `false` | Автоматическое следование за редиректами |
-| `version` | `HttpClient.Version` | `HTTP_1_1` | Версия HTTP-протокола |
+| `allowRedirects` | `boolean` | `false`               | Автоматическое следование за редиректами |
+| `version` | `HttpClient.Version` | `HTTP_1_1`            | Версия HTTP-протокола |
+| `logRequests` | `boolean` | `true`                | Логировать запросы и ответы через logger-spring-boot-starter |
 
 ## Константы
 
