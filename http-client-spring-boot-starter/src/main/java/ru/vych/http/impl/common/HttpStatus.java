@@ -15,7 +15,7 @@ package ru.vych.http.impl.common;
  *   <li>5xx — ошибки сервера</li>
  * </ul>
  *
- * @see Response#status
+ * @see ru.vych.http.impl.entities.Response#getStatus()
  */
 public final class HttpStatus {
     // 1xx Informational

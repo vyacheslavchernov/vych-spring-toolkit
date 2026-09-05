@@ -34,7 +34,7 @@ public class Request {
     private final String uuid = UUID.randomUUID().toString();
 
     /**
-     * Путь API (относительный URL), который будет добавлен к {@link HttpClientConfig#getRoot()}.
+     * Путь API (относительный URL), который будет добавлен к {@link ru.vych.http.config.HttpClientConfig#getRoot()}.
      * <p>Может содержать параметры пути, которые подставляются через {@link #pathParams}.</p>
      */
     @Setter
@@ -66,7 +66,7 @@ public class Request {
     /**
      * Дополнительные HTTP-заголовки запроса.
      * <p>
-     * Добавляются поверх дефолтных заголовков из {@link HttpClientConfig#getHeaders()}.
+     * Добавляются поверх дефолтных заголовков из {@link ru.vych.http.config.HttpClientConfig#getHeaders()}.
      * Могут переопределять значения из конфига.
      * </p>
      */

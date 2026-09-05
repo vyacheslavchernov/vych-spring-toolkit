@@ -46,12 +46,6 @@ public interface HttpClient {
 
     /**
      * Возвращает обработчик cookie текущего клиента.
-     * <p>
-     * Возвращает {@code null}, если cookie-хранилище не было настроено
-     * (т. е. {@link ru.vych.http.config.HttpClientConfig#storeCookies} равно {@code false}).
-     * </p>
-     *
-     * @return обработчик cookie или {@code null}, если не настроен
      */
     CookieHandler getCookieHandler();
 

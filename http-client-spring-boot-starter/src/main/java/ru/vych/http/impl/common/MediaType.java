@@ -17,7 +17,7 @@ package ru.vych.http.impl.common;
  *   <li>Font — шрифты</li>
  * </ul>
  *
- * @see Request.Builder#contentType
+ * @see ru.vych.http.impl.entities.Request.Builder
  * @see ru.vych.http.impl.entities.Header
  */
 public final class MediaType {
