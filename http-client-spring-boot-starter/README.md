@@ -53,6 +53,8 @@ import ru.vych.http.impl.HttpClient;
 import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.common.HttpMethod;
 
+import java.time.Duration;
+
 @Service
 public class MyService {
     private final HttpClient httpClient;
@@ -60,7 +62,7 @@ public class MyService {
     public MyService(HttpClientBuilder builder, LogService logService) {
         HttpClientConfig config = new HttpClientConfig("MyService");
         config.setRoot("https://api.example.com");
-        config.setTimeout(10000);
+        config.setTimeout(Duration.ofSeconds(10));
         this.httpClient = builder.build(config, logService, List.of(), List.of());
     }
 
@@ -89,6 +91,9 @@ import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.config.HttpClientBuilder;
 import ru.vych.http.impl.HttpClient;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
+
 @Configuration
 public class HttpClientConfig {
     private final LogService logService;
@@ -101,8 +106,8 @@ public class HttpClientConfig {
     public HttpClient httpClient(HttpClientBuilder builder) {
         HttpClientConfig config = new HttpClientConfig("MyService")
                 .setRoot("https://api.example.com")
-                .setTimeout(10000)
-                .setAllowRedirects(true);
+                .setTimeout(Duration.ofSeconds(10))
+                .setRedirectPolicy(HttpClient.Redirect.ALWAYS);
 
         return builder.build(config, logService, List.of(), List.of());
     }
@@ -174,12 +179,12 @@ List<Header> headers = response.getHeaders();
 |---|---|-----------------------|---|
 | `serviceCode` | `String` | *(обязательно)*       | Код сервиса для логирования |
 | `root` | `String` | `""`                  | Корневой URL (base URL) для всех запросов |
-| `timeout` | `int` | `15000`               | Тайм-аут в миллисекундах |
-| `headers` | `Map<String, String>` | `{}`                  | Дефолтные заголовки для всех запросов |
+| `timeout` | `Duration` | `PT15S` (15 секунд)   | Тайм-аут установления соединения и ожидания ответа |
+| `headers` | `Map<String, String>` | `{}`                  | Дефолтные HTTP-заголовки для всех запросов |
 | `cookies` | `Map<String, String>` | `{}`                  | Дефолтные cookie, устанавливаемые при инициализации |
-| `storeCookies` | `boolean` | `false`               | Сохранять cookie из ответов |
-| `cookieHandlerClass` | `Class<? extends CookieHandler>` | `CookieManager.class` | Класс обработчика cookie |
-| `allowRedirects` | `boolean` | `false`               | Автоматическое следование за редиректами |
+| `storeCookies` | `Boolean` | `false`               | Сохранять cookie из ответов |
+| `cookieHandlerClass` | `Class<? extends CookieHandler>` | `CookieManager.class` | Класс обработчика cookie (должен иметь конструктор по умолчанию) |
+| `redirectPolicy` | `HttpClient.Redirect` | `NORMAL`              | Политика автоматического следования за редиректами (3xx статусы) |
 | `version` | `HttpClient.Version` | `HTTP_1_1`            | Версия HTTP-протокола |
 | `logRequests` | `boolean` | `true`                | Логировать запросы и ответы через logger-spring-boot-starter |
 

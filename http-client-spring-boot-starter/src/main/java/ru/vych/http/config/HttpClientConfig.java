@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,12 +47,13 @@ public class HttpClientConfig {
     private String root = "";
 
     /**
-     * Тайм-аут установления соединения и ожидания ответа в миллисекундах.
-     * <p>По умолчанию — 15 000 мс (15 секунд).</p>
-     *
-     * @see java.time.Duration
+     * Тайм-аут установления соединения и ожидания ответа.
+     * <p>
+     * Применяется как к соединению, так и к ожиданию ответа от сервера.
+     * </p>
+     * <p>По умолчанию — 15 секунд.</p>
      */
-    private Integer timeout = 15000;
+    private Duration timeout = Duration.ofSeconds(15);
 
     /**
      * Дефолтные HTTP-заголовки, которые автоматически добавляются к каждому запросу.
@@ -95,11 +97,17 @@ public class HttpClientConfig {
     private Class<? extends CookieHandler> cookieHandlerClass = CookieManager.class;
 
     /**
-     * Флаг автоматического следования за редиректами (3xx статусы).
-     * <p>При {@code true} клиент будет автоматически переходить по Location-заголовку.</p>
-     * <p>По умолчанию — {@code false}.</p>
+     * Политика автоматического следования за редиректами (3xx статусы).
+     * <p>
+     * {@code NORMAL} — следует за редиректами с методами GET и HEAD, но не с POST.
+     * {@code ALWAYS} — следует за редиректами любого метода.
+     * {@code NEVER} — не следует за редиректами, возвращает исходный ответ.
+     * </p>
+     * <p>По умолчанию — {@link HttpClient.Redirect#NORMAL}.</p>
+     *
+     * @see HttpClient.Redirect
      */
-    private Boolean allowRedirects = false;
+    private HttpClient.Redirect redirectPolicy = HttpClient.Redirect.NORMAL;
 
     /**
      * Версия HTTP-протокола, которая будет использоваться при отправке запросов.
