@@ -181,12 +181,51 @@ List<Header> headers = response.getHeaders();
 | `root` | `String` | `""`                  | Корневой URL (base URL) для всех запросов |
 | `timeout` | `Duration` | `PT15S` (15 секунд)   | Тайм-аут установления соединения и ожидания ответа |
 | `headers` | `Map<String, String>` | `{}`                  | Дефолтные HTTP-заголовки для всех запросов |
-| `cookies` | `Map<String, String>` | `{}`                  | Дефолтные cookie, устанавливаемые при инициализации |
-| `storeCookies` | `Boolean` | `false`               | Сохранять cookie из ответов |
-| `cookieHandlerClass` | `Class<? extends CookieHandler>` | `CookieManager.class` | Класс обработчика cookie (должен иметь конструктор по умолчанию) |
+| `cookies` | `List<CookieEntry>` | `[]`                | Дефолтные cookie, устанавливаемые при инициализации клиента |
+| `cookiePolicy` | `CookiesPolicies` | `ACCEPT_ALL`          | Политика принятия cookie: `ACCEPT_ALL`, `ACCEPT_NONE`, `ACCEPT_ORIGINAL_SERVER` |
 | `redirectPolicy` | `HttpClient.Redirect` | `NORMAL`              | Политика автоматического следования за редиректами (3xx статусы) |
 | `version` | `HttpClient.Version` | `HTTP_1_1`            | Версия HTTP-протокола |
 | `logRequests` | `boolean` | `true`                | Логировать запросы и ответы через logger-spring-boot-starter |
+
+### Политика cookie
+
+Для управления cookie используется `CookiesPolicies`:
+
+| Значение | Описание |
+|---|---|
+| `ACCEPT_ALL` | Принимать все cookie от серверов |
+| `ACCEPT_NONE` | Отклонять все cookie |
+| `ACCEPT_ORIGINAL_SERVER` | Принимать только cookie от исходного сервера (не подменённые) |
+
+Пример настройки:
+
+```java
+HttpClientConfig config = new HttpClientConfig("MyService")
+        .setRoot("https://api.example.com")
+        .setCookiePolicy(CookiesPolicies.ACCEPT_NONE);
+```
+
+Пример добавления дефолтных cookie:
+
+```java
+import ru.vych.http.impl.common.CookiesPolicies;
+import ru.vych.http.impl.entities.CookieEntry;
+
+CookieEntry sessionCookie = new CookieEntry();
+sessionCookie.setUri(URI.create("https://api.example.com"));
+sessionCookie.setCookie(new HttpCookie("session", "abc123"));
+
+CookieEntry tokenCookie = new CookieEntry();
+tokenCookie.setUri(URI.create("https://api.example.com"));
+tokenCookie.setCookie(new HttpCookie("token", "xyz789"));
+
+List<CookieEntry> defaultCookies = List.of(sessionCookie, tokenCookie);
+
+HttpClientConfig config = new HttpClientConfig("MyService")
+        .setRoot("https://api.example.com")
+        .setCookiePolicy(CookiesPolicies.ACCEPT_ALL)
+        .setCookies(defaultCookies);
+```
 
 ## Константы
 

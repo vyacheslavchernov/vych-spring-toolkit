@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.common.HttpStatus;
+import ru.vych.http.impl.entities.CookieEntry;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.entities.Response;
@@ -17,10 +18,9 @@ import ru.vych.http.impl.interceptors.RequestInterceptor;
 import ru.vych.http.impl.interceptors.ResponseInterceptor;
 import ru.vych.logger.impl.LogService;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
-import java.net.HttpCookie;
+import java.net.CookiePolicy;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
@@ -129,32 +129,33 @@ public class HttpClientImpl implements HttpClient {
             throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT, e);
         }
 
-        // TODO: хендлер кук должен создаваться всегда. Управлять сохранением кук через CookiePolicy.
-        //  Добавлять куки из конфига клиента в хендлер при инициализации клиента.
-        if (config.getStoreCookies()) {
-            try {
-                if (config.getCookieHandlerClass() == null) {
-                    throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_HANDLER_CANT_BE_NULL);
-                }
-                clientBuilder.cookieHandler(config.getCookieHandlerClass().getConstructor().newInstance());
-            } catch (InstantiationException | NoSuchMethodException |
-                     InvocationTargetException | IllegalAccessException e) {
-                httpClientLogger.error(
-                        config.getServiceCode(), clientUuid, CREATION_ERROR_CANT_CREATE_COOKIES_HANDLER,
-                        config, e.toString()
-                );
-                throw new HttpClientConfigurationException(CREATION_ERROR_CANT_CREATE_COOKIES_HANDLER, e);
-            }
+        CookieManager cookieHandler = new CookieManager();
+
+        if (config.getCookiePolicy() == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL);
         }
+
+        switch (config.getCookiePolicy()) {
+            case ACCEPT_ALL:
+                cookieHandler.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+                break;
+            case ACCEPT_NONE:
+                cookieHandler.setCookiePolicy(CookiePolicy.ACCEPT_NONE);
+                break;
+            case ACCEPT_ORIGINAL_SERVER:
+                cookieHandler.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
+                break;
+        }
+
+        if (config.getCookies() == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL);
+        }
+        for (CookieEntry cookie : config.getCookies()) {
+            cookieHandler.getCookieStore().add(cookie.getUri(), cookie.getCookie());
+        }
+        clientBuilder.cookieHandler(cookieHandler);
 
         this.client = clientBuilder.build();
-
-        CookieManager cookies = (CookieManager) this.client.cookieHandler().orElse(null);
-        if (cookies != null) {
-            config.getCookies().forEach((key, value) ->
-                    cookies.getCookieStore().add(URI.create("*"), new HttpCookie(key, value))
-            );
-        }
 
         httpClientLogger.info(
                 true, config.getServiceCode(), clientUuid,

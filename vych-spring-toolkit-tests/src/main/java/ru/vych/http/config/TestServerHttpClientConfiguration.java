@@ -24,8 +24,7 @@ public class TestServerHttpClientConfiguration {
     ) throws HttpClientException {
         HttpClientConfig config = new HttpClientConfig(SERVICE_CODE)
                 .setRoot(TEST_SERVER_URI)
-                .setTimeout(Duration.ofSeconds(2))
-                .setStoreCookies(false);
+                .setTimeout(Duration.ofSeconds(2));
         return builder.build(config, logService, requestInterceptors, responseInterceptors);
     }
 }

@@ -8,7 +8,7 @@ import ru.vych.http.impl.entities.Response;
  * <p>
  * Все зарегистрированные {@code ResponseInterceptor} вызываются последовательно
  * в порядке добавления после получения каждого ответа через
- * {@link ru.vych.http.impl.HttpClient#execute(Request)}.
+ * {@link ru.vych.http.impl.HttpClient#execute(ru.vych.http.impl.entities.Request)}.
  * </p>
  * <p>
  * Интерсепторы могут использоваться для:

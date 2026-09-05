@@ -4,12 +4,15 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import ru.vych.http.impl.common.CookiesPolicies;
+import ru.vych.http.impl.entities.CookieEntry;
 
-import java.net.CookieHandler;
-import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,34 +70,22 @@ public class HttpClientConfig {
 
     /**
      * Дефолтные cookie, которые добавляются в cookie-хранилище при инициализации клиента.
-     * <p>
-     * Работает только если {@link #storeCookies} равно {@code true}.
-     * </p>
      */
-    private Map<String, String> cookies = new HashMap<>();
+    private List<CookieEntry> cookies = new ArrayList<>();
 
     /**
-     * Флаг, указывающий, следует ли сохранять cookie из полученных HTTP-ответов.
+     * Политика принятия cookie.
      * <p>
-     * При {@code true} создаётся экземпляр {@link #cookieHandlerClass} для
-     * управления cookie-хранилищем. При {@code false} cookie не сохраняются.
+     * {@code ACCEPT_ALL} — принимать все cookie.
+     * {@code ACCEPT_NONE} — отклонять все cookie.
+     * {@code ACCEPT_ORIGINAL_SERVER} — принимать только cookie оригинального сервера.
      * </p>
-     * <p>По умолчанию — {@code false}.</p>
+     * <p>По умолчанию — {@link CookiesPolicies#ACCEPT_ALL}.</p>
      *
-     * @see #cookieHandlerClass
+     * @see CookiePolicy
+     * @see CookiesPolicies
      */
-    private Boolean storeCookies = false;
-
-    /**
-     * Класс обработчика cookie, который будет использоваться клиентом.
-     * <p>
-     * Должен иметь конструктор по умолчанию. По умолчанию — {@link java.net.CookieManager}.
-     * </p>
-     *
-     * @see java.net.CookieHandler
-     * @see #storeCookies
-     */
-    private Class<? extends CookieHandler> cookieHandlerClass = CookieManager.class;
+    private CookiesPolicies cookiePolicy = CookiesPolicies.ACCEPT_ALL;
 
     /**
      * Политика автоматического следования за редиректами (3xx статусы).

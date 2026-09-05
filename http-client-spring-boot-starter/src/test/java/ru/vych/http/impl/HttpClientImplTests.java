@@ -39,8 +39,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -103,9 +103,14 @@ class HttpClientImplTests {
                         CREATION_ERROR_CONFIGURATION_IS_INCORRECT
                 ),
                 Arguments.of(
-                        new HttpClientConfig(SERVICE_CODE).setStoreCookies(true).setCookieHandlerClass(null),
+                        new HttpClientConfig(SERVICE_CODE).setCookiePolicy(null),
                         HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_HANDLER_CANT_BE_NULL
+                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL
+                ),
+                Arguments.of(
+                        new HttpClientConfig(SERVICE_CODE).setCookies(null),
+                        HttpClientConfigurationException.class,
+                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL
                 )
         );
     }
@@ -207,10 +212,11 @@ class HttpClientImplTests {
             Class<Exception> expectedException,
             String expectedMessage
     ) {
-        assertThrows(expectedException, () ->
-                        new HttpClientImpl(invalidConfig, logService, null, null),
-                expectedMessage
-        );
+        assertThatThrownBy(() ->
+                new HttpClientImpl(invalidConfig, logService, null, null))
+                .describedAs("Ошибка не соответствует ожидаемой")
+                .isInstanceOf(expectedException)
+                .hasMessage(expectedMessage);
     }
 
     /**
@@ -221,10 +227,11 @@ class HttpClientImplTests {
     @Test
     @DisplayName("Проверка конструктора с logService null")
     public void constructorLogServiceNull() {
-        assertThrows(HttpClientConfigurationException.class, () ->
-                        new HttpClientImpl(config, null, null, null),
-                CREATION_ERROR_LOG_SERVICE_IS_NULL
-        );
+        assertThatThrownBy(() ->
+                new HttpClientImpl(config, null, null, null))
+                .describedAs("Ошибка не соответствует ожидаемой")
+                .isInstanceOf(HttpClientConfigurationException.class)
+                .hasMessage(CREATION_ERROR_LOG_SERVICE_IS_NULL);
     }
 
     /**
@@ -320,11 +327,10 @@ class HttpClientImplTests {
         var dummyResponse = new DummyResponse()
                 .setBody("{'invalidJson':'invalidJson'}".getBytes(StandardCharsets.UTF_8));
 
-        assertThrows(
-                HttpClientHandleResponseException.class,
-                () -> getValidClient().buildResponse(dummyResponse, request),
-                RESPONSE_ERROR_CANT_DESERIALIZE_BODY
-        );
+        assertThatThrownBy(() -> getValidClient().buildResponse(dummyResponse, request))
+                .describedAs("Ошибка не соответствует ожидаемой")
+                .isInstanceOf(HttpClientHandleResponseException.class)
+                .hasMessage(RESPONSE_ERROR_CANT_DESERIALIZE_BODY);
     }
 
     /**

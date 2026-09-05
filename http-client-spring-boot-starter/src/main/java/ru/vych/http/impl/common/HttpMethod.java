@@ -8,7 +8,7 @@ package ru.vych.http.impl.common;
  * </p>
  *
  * @see ru.vych.http.impl.HttpClient
- * @see Request#method
+ * @see ru.vych.http.impl.entities.Request#getMethod()
  */
 public enum HttpMethod {
     /**
