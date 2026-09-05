@@ -75,17 +75,24 @@ public class Response {
     /**
      * Возвращает тело ответа, приведённое к типу, указанному в исходном запросе.
      * <p>
-     * Выполняет приведение {@link #body} к {@code Request.getResponseClass()} через
-     * {@link Class#cast(Object)}. Если {@code body} уже имеет нужный тип — возвращает как есть.
+     * Если {@code responseClass} равен {@code null}, {@code byte.class} или {@code byte[].class},
+     * возвращает {@code null}. В остальных случаях выполняет приведение
+     * {@link #body} к {@code Request.getResponseClass()} через {@link Class#cast(Object)}.
+     * Если {@code body} уже имеет нужный тип — возвращает как есть.
      * </p>
      *
      * @param <T> тип, указанный в {@link Request#getResponseClass()}
-     * @return десериализованное тело ответа приведённое к целевому типу
+     * @return десериализованное тело ответа, приведённое к целевому типу, или {@code null},
+     *         если {@code responseClass} равен {@code null}, {@code byte.class} или {@code byte[].class}
      * @throws ClassCastException если {@link #body} не может быть приведено к целевому типу
      */
     @JsonIgnore
     @SuppressWarnings("unchecked")
     public <T> T getCastedBody() {
+        var responseClass = request.getResponseClass();
+        if (responseClass == null || responseClass == byte.class || responseClass == byte[].class) {
+            return null;
+        }
         return (T) request.getResponseClass().cast(body);
     }
 }

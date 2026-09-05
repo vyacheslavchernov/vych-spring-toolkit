@@ -2,7 +2,8 @@ package ru.vych.http.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.InstanceOfAssertFactory;
@@ -17,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.common.HttpMethod;
+import ru.vych.http.impl.entities.DummyDto;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.entities.Response;
@@ -44,7 +46,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("HttpClientImpl")
+@DisplayName("Тесты класса HttpClientImpl")
 class HttpClientImplTests {
     private final static String SERVICE_CODE = "test-client";
 
@@ -494,18 +496,6 @@ class HttpClientImplTests {
         public HttpClient.Version version() {
             return version;
         }
-    }
-
-    /**
-     * Моковый DTO-объект для тестирования маппинга тела ответа через Jackson.
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @EqualsAndHashCode
-    public static class DummyDto {
-        private String field;
     }
 
     /**
