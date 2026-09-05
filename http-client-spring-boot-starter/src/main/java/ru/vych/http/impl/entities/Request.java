@@ -1,9 +1,6 @@
 package ru.vych.http.impl.entities;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.Accessors;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.exceptions.HttpClientInvalidRequestException;
@@ -27,6 +24,7 @@ import java.util.*;
 @AllArgsConstructor
 @Accessors(chain = true)
 @ToString
+@EqualsAndHashCode
 public class Request {
 
     /**

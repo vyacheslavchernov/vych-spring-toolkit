@@ -1,7 +1,11 @@
 package ru.vych.http.impl;
 
 import ru.vych.http.config.HttpClientConfig;
+import ru.vych.http.impl.exceptions.HttpClientConfigurationException;
 import ru.vych.logger.impl.LogService;
+
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.CREATION_ERROR_CONFIGURATION_IS_NULL;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.CREATION_ERROR_LOG_SERVICE_IS_NULL;
 
 /**
  * Обёртка над {@link LogService}, которая контролирует логирование запросов и ответов
@@ -26,8 +30,15 @@ public class HttpClientLogger {
      * @param config     конфигурация HTTP-клиента; не должен быть {@code null}
      * @param logService сервис логирования; не должен быть {@code null}
      */
-    public HttpClientLogger(HttpClientConfig config, LogService logService) {
+    public HttpClientLogger(HttpClientConfig config, LogService logService) throws HttpClientConfigurationException {
+        if (config == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_NULL);
+        }
         this.config = config;
+
+        if (logService == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_LOG_SERVICE_IS_NULL);
+        }
         this.logService = logService;
     }
 
