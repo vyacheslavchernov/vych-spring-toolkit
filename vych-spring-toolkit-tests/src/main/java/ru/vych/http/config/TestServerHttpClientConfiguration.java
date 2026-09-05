@@ -8,6 +8,7 @@ import ru.vych.http.impl.interceptors.RequestInterceptor;
 import ru.vych.http.impl.interceptors.ResponseInterceptor;
 import ru.vych.logger.impl.LogService;
 
+import java.time.Duration;
 import java.util.List;
 
 import static ru.vych.http.config.TestServerConfiguration.TEST_SERVER_URI;
@@ -23,7 +24,7 @@ public class TestServerHttpClientConfiguration {
     ) throws HttpClientException {
         HttpClientConfig config = new HttpClientConfig(SERVICE_CODE)
                 .setRoot(TEST_SERVER_URI)
-                .setTimeout(2000)
+                .setTimeout(Duration.ofSeconds(2))
                 .setStoreCookies(false);
         return builder.build(config, logService, requestInterceptors, responseInterceptors);
     }
