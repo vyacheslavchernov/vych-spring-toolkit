@@ -1,7 +1,5 @@
 package ru.vych.http.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -12,16 +10,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vych.http.config.HttpClientConfig;
+import ru.vych.http.impl.checkdata.HttpClientImplBuildResponseCheckData;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.DummyDto;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.entities.Response;
 import ru.vych.http.impl.exceptions.HttpClientConfigurationException;
 import ru.vych.http.impl.exceptions.HttpClientException;
 import ru.vych.http.impl.exceptions.HttpClientHandleResponseException;
@@ -36,144 +33,22 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
-import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
+import static ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders.SERVICE_CODE;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.CREATION_ERROR_LOG_SERVICE_IS_NULL;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.RESPONSE_ERROR_CANT_DESERIALIZE_BODY;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Тесты класса HttpClientImpl")
 class HttpClientImplTests {
-    private final static String SERVICE_CODE = "test-client";
-
-    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     @Mock
     private LogService logService;
 
     private HttpClientConfig config;
-
-    /**
-     * Поставщик аргументов для параметризованного теста конструктора:
-     * null-аргументы, пустые списки и списки с интерцепторами.
-     */
-    private static Stream<Arguments> interceptorArgsProvider() {
-        return Stream.of(
-                Arguments.of(null, null),
-                Arguments.of(new ArrayList<RequestInterceptor>(), new ArrayList<ResponseInterceptor>()),
-                Arguments.of(
-                        List.of(new TestRequestInterceptor(), new TestRequestInterceptor()),
-                        List.of(new TestResponseInterceptor(), new TestResponseInterceptor())
-                )
-        );
-    }
-
-    /**
-     * Поставщик аргументов для параметризованного теста невалидной конфигурации:
-     * {@code null} конфигурация, а также конфигурации с {@code null} или отрицательными
-     * значениями полей {@code root}, {@code timeout}, {@code version}, {@code cookieHandlerClass}.
-     */
-    private static Stream<Arguments> invalidConfigArgsProvider() {
-        return Stream.of(
-                Arguments.of(
-                        null,
-                        HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_NULL
-                ),
-                Arguments.of(
-                        new HttpClientConfig(SERVICE_CODE).setRoot(null),
-                        HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_ROOT_CANT_BE_NULL
-                ),
-                Arguments.of(
-                        new HttpClientConfig(SERVICE_CODE).setTimeout(null),
-                        HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT
-                ),
-                Arguments.of(
-                        new HttpClientConfig(SERVICE_CODE).setTimeout(Duration.ZERO),
-                        HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT
-                ),
-                Arguments.of(
-                        new HttpClientConfig(SERVICE_CODE).setVersion(null),
-                        HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT
-                ),
-                Arguments.of(
-                        new HttpClientConfig(SERVICE_CODE).setCookiePolicy(null),
-                        HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL
-                ),
-                Arguments.of(
-                        new HttpClientConfig(SERVICE_CODE).setCookies(null),
-                        HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL
-                )
-        );
-    }
-
-    /**
-     * Поставщик аргументов для параметризованного теста {@code buildResponseBody}:
-     * тела ответа в виде {@code String}, кастомного DTO (маппинг через Jackson)
-     * и {@code byte[]}.
-     */
-    private static Stream<Arguments> buildResponseArgsProvider() throws JsonProcessingException {
-        return Stream.of(
-                Arguments.of(
-                        String.class,
-                        "Hello, world!",
-                        "Hello, world!",
-                        String.class,
-                        String.class,
-                        "Hello, world!".getBytes(StandardCharsets.UTF_8)
-                ),
-                Arguments.of(
-                        DummyDto.class,
-                        new DummyDto("test"),
-                        OBJECT_MAPPER.writeValueAsString(new DummyDto("test")),
-                        DummyDto.class,
-                        String.class,
-                        OBJECT_MAPPER.writeValueAsBytes(new DummyDto("test"))
-                ),
-                Arguments.of(
-                        byte[].class,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "Hello, world!".getBytes(StandardCharsets.UTF_8)
-                )
-        );
-    }
-
-    /**
-     * Поставщик аргументов для параметризованного теста {@code buildResponseHeaders}:
-     * карта заголовков с несколькими значениями и пустая карта.
-     */
-    private static Stream<Arguments> buildResponseHeadersArgsProvider() {
-        return Stream.of(
-                Arguments.of(
-                        Map.of(
-                                "header1", List.of("value1", "value2"),
-                                "header2", List.of("value1")
-                        ),
-                        List.of(
-                                new Header("header1", "value1"),
-                                new Header("header1", "value2"),
-                                new Header("header2", "value1")
-                        )
-                ),
-                Arguments.of(
-                        new HashMap<String, List<String>>(),
-                        new ArrayList<Header>()
-                )
-        );
-    }
 
     /**
      * Создаёт конфигурацию с базовым URL, тайм-аутом и включённым логированием запросов.
@@ -190,7 +65,7 @@ class HttpClientImplTests {
      * при передаче null, пустых списков или списков с интерцепторами.
      */
     @ParameterizedTest
-    @MethodSource("interceptorArgsProvider")
+    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#interceptorArgsProvider")
     @DisplayName("Проверка конструктора с валидными аргументами")
     public void constructorValidArgs(
             List<RequestInterceptor> requestInterceptors,
@@ -207,7 +82,7 @@ class HttpClientImplTests {
      * полей {@code root}, {@code timeout}, {@code version}, {@code cookieHandlerClass}.
      */
     @ParameterizedTest
-    @MethodSource("invalidConfigArgsProvider")
+    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#invalidConfigArgsProvider")
     @DisplayName("Проверка конструктора с неправильными значениями конфигурации")
     public void constructorInvalidConfig(
             HttpClientConfig invalidConfig,
@@ -243,24 +118,17 @@ class HttpClientImplTests {
      * разобранное тело, UUID и исходный запрос.
      */
     @ParameterizedTest
-    @MethodSource("buildResponseArgsProvider")
+    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#buildResponseArgsProvider")
     @DisplayName("Проверка корректного возврата тела ответа для разных типов")
-    public void buildResponseBody(
-            Class<?> responseClass,
-            Object expectedBody,
-            Object expectedRawBody,
-            Class<?> expectedBodyType,
-            Class<?> expectedRawBodyType,
-            byte[] responseBytes
-    ) throws HttpClientException {
+    public void buildResponseBody(HttpClientImplBuildResponseCheckData checkData) throws HttpClientException {
         var request = Request.builder()
                 .setUrl("")
                 .setMethod(HttpMethod.GET)
-                .setResponseClass(responseClass)
+                .setResponseClass(checkData.getResponseClass())
                 .build();
 
         var dummyResponse = new DummyResponse()
-                .setBody(responseBytes);
+                .setBody(checkData.getResponseByte());
 
         var response = getValidClient().buildResponse(dummyResponse, request);
 
@@ -270,10 +138,10 @@ class HttpClientImplTests {
                                 .describedAs("Тело ответа не соответствует ожидаемому")
                                 .isNotNull()
                                 .isNotEmpty()
-                                .containsExactly(responseBytes),
+                                .containsExactly(checkData.getResponseByte()),
 
                         rs -> {
-                            if (expectedBody == null) {
+                            if (checkData.getExpectedBody() == null) {
                                 assertThat(rs.getBody())
                                         .describedAs("Тело ответа должно быть null")
                                         .isNull();
@@ -281,13 +149,13 @@ class HttpClientImplTests {
                                 assertThat(rs.getBody())
                                         .describedAs("Тело ответа не соответствует ожидаемому")
                                         .isNotNull()
-                                        .isInstanceOf(expectedBodyType)
-                                        .isEqualTo(expectedBody);
+                                        .isInstanceOf(checkData.getExpectedBodyType())
+                                        .isEqualTo(checkData.getExpectedBody());
                             }
                         },
 
                         rs -> {
-                            if (expectedRawBody == null) {
+                            if (checkData.getExpectedRawBody() == null) {
                                 assertThat(rs.getRawBody())
                                         .describedAs("RawBody должно быть null")
                                         .isNull();
@@ -296,8 +164,8 @@ class HttpClientImplTests {
                                         .describedAs("RawBody не соответствует ожидаемому")
                                         .isNotNull()
                                         .isNotEmpty()
-                                        .isInstanceOf(expectedRawBodyType)
-                                        .isEqualTo(expectedRawBody);
+                                        .isInstanceOf(checkData.getExpectedRawBodyType())
+                                        .isEqualTo(checkData.getExpectedRawBody());
                             }
                         },
 
@@ -340,7 +208,7 @@ class HttpClientImplTests {
      * в список {@code Header}.
      */
     @ParameterizedTest
-    @MethodSource("buildResponseHeadersArgsProvider")
+    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#buildResponseHeadersArgsProvider")
     @DisplayName("Проверка корректного маппинга заголовков ответа")
     public void buildResponseHeaders(Map<String, List<String>> headers, List<Header> expectedHeaders) throws HttpClientException {
         var client = getValidClient();
@@ -495,26 +363,6 @@ class HttpClientImplTests {
         @Override
         public HttpClient.Version version() {
             return version;
-        }
-    }
-
-    /**
-     * Тестовый {@link RequestInterceptor} с пустой реализацией.
-     */
-    private static class TestRequestInterceptor implements RequestInterceptor {
-        @Override
-        public void handle(ru.vych.http.impl.HttpClient client, Request request) {
-
-        }
-    }
-
-    /**
-     * Тестовый {@link ResponseInterceptor} с пустой реализацией.
-     */
-    private static class TestResponseInterceptor implements ResponseInterceptor {
-        @Override
-        public void handle(ru.vych.http.impl.HttpClient client, Response response) {
-
         }
     }
 }
