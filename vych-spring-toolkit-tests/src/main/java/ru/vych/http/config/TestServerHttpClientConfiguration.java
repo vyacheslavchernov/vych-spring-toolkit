@@ -10,6 +10,7 @@ import ru.vych.logger.impl.LogService;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static ru.vych.http.config.TestServerConfiguration.TEST_SERVER_URI;
 
@@ -24,7 +25,8 @@ public class TestServerHttpClientConfiguration {
     ) throws HttpClientException {
         HttpClientConfig config = new HttpClientConfig(SERVICE_CODE)
                 .setRoot(TEST_SERVER_URI)
-                .setTimeout(Duration.ofSeconds(2));
+                .setTimeout(Duration.ofSeconds(2))
+                .setHeaders(Map.of("X-Config-Header", "config-value"));
         return builder.build(config, logService, requestInterceptors, responseInterceptors);
     }
 }
