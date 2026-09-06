@@ -5,14 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.params.provider.Arguments;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.checkdata.HttpClientImplBuildResponseCheckData;
-import ru.vych.http.impl.entities.DummyDto;
-import ru.vych.http.impl.entities.Header;
-import ru.vych.http.impl.entities.TestRequestInterceptor;
-import ru.vych.http.impl.entities.TestResponseInterceptor;
+import ru.vych.http.impl.checkdata.HttpClientImplBuildUriCheckData;
+import ru.vych.http.impl.common.HttpMethod;
+import ru.vych.http.impl.entities.*;
 import ru.vych.http.impl.exceptions.HttpClientConfigurationException;
+import ru.vych.http.impl.exceptions.HttpClientInvalidRequestException;
 import ru.vych.http.impl.interceptors.RequestInterceptor;
 import ru.vych.http.impl.interceptors.ResponseInterceptor;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -149,6 +151,123 @@ public class HttpClientImplTestsDataProviders {
                         new HashMap<String, List<String>>(),
                         new ArrayList<Header>()
                 )
+        );
+    }
+
+    /**
+     * Поставщик аргументов для параметризованного теста {@code buildUri}:
+     * базовые URL (с слэшем и без), кодирование пробелов и кириллицы в пути,
+     * path-параметры с специальными символами, query-параметры с дублирующимися ключами
+     * и сохранение существующего percent-encoding.
+     */
+    public static Stream<HttpClientImplBuildUriCheckData> httpClientImplBuildUriArgsProvider() throws HttpClientInvalidRequestException, URISyntaxException {
+        return Stream.of(
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("/test")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/test")),
+
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080/"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("test")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/test")),
+
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080/"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("/test")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/test")),
+
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("test")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/test")),
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("te st")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/te%20st")),
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("тест")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/%D1%82%D0%B5%D1%81%D1%82")),
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("te%20 st")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/te%20%20st")),
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("te/st")
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/te/st")),
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("test")
+                                .setPathParams(List.of("test", "тест", "te st", "te/st", "te%20st"))
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/test/test/%D1%82%D0%B5%D1%81%D1%82" +
+                                "/te%20st/te%2Fst/te%20st")),
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("test")
+                                .setQueryParams(new HashMap<String, String>(Map.of(
+                                        "test", "тест",
+                                        "te st", "te/st",
+                                        "te%20st", "te  /st"
+                                )))
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/test?test=%D1%82%D0%B5%D1%81%D1%82" +
+                                "&te%20st=te%2Fst&te%20st=te%20%20%2Fst")),
+                new HttpClientImplBuildUriCheckData()
+                        .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
+                        .setRequest(Request.builder()
+                                .setMethod(HttpMethod.GET)
+                                .setUrl("test")
+                                .setPathParams(List.of("test", "тест", "te st", "te/st", "te%20st"))
+                                .setQueryParams(new HashMap<String, String>(Map.of(
+                                        "test", "тест",
+                                        "te st", "te/st",
+                                        "te%20st", "te  /st"
+                                )))
+                                .build()
+                        )
+                        .setExpectedURI(new URI("http://localhost:8080/test/test/%D1%82%D0%B5%D1%81%D1%82" +
+                                "/te%20st/te%2Fst/te%20st?test=%D1%82%D0%B5%D1%81%D1%82&te%20st=te%2Fst&te%20st=te%20%20%2Fst"))
         );
     }
 }

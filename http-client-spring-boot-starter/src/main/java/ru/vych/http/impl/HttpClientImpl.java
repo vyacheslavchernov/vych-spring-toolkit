@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
@@ -44,13 +45,13 @@ import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
  * <p>
  * <b>Процесс выполнения запроса:</b>
  * <ol>
- *   <li>Запускаются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
+ *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
  *   <li>Формируется URI из корневого URL конфига + путь запроса + path- и query-параметры.</li>
  *   <li>Добавляются заголовки: сначала дефолтные из конфига, затем — из запроса.</li>
  *   <li>Для POST тело запроса сериализуется (String → строка, byte[] → байты, остальное → JSON через Jackson).</li>
  *   <li>Запрос отправляется через {@code java.net.http.HttpClient}.</li>
  *   <li>Ответ парсится: body десериализуется в {@link ru.vych.http.impl.entities.Request#getResponseClass()}.</li>
- *   <li>Запускаются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
+ *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
  * </ol>
  * </p>
  *
@@ -60,6 +61,7 @@ import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
  */
 @Slf4j
 public class HttpClientImpl implements HttpClient {
+    private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
     /**
      * Уникальный идентификатор данного экземпляра клиента.
@@ -204,6 +206,17 @@ public class HttpClientImpl implements HttpClient {
         return response;
     }
 
+    /**
+     * Выполняет HTTP GET-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * отправляет и десериализует ответ.
+     * </p>
+     *
+     * @param request запрос, содержащий путь и заголовки
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     */
     private Response get(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -222,6 +235,18 @@ public class HttpClientImpl implements HttpClient {
         return buildResponse(rs, request);
     }
 
+    /**
+     * Выполняет HTTP POST-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * сериализует тело запроса и отправляет. Результат десериализуется.
+     * </p>
+     *
+     * @param request запрос, содержащий путь, заголовки и тело
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
+     */
     private Response post(Request request) throws HttpClientException {
         Builder requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -242,18 +267,18 @@ public class HttpClientImpl implements HttpClient {
     /**
      * Формирует {@link HttpRequest.BodyPublisher} из тела запроса.
      * <p>
-     * Поддерживает три типа payload:
+     * Поддерживает четыре типа payload:
      * <ul>
+     *   <li>{@code null} → пустое тело</li>
      *   <li>{@code String} → отправляется как строка в UTF-8</li>
      *   <li>{@code byte[]} → отправляется как байтовый массив</li>
      *   <li>Любой другой объект → сериализуется в JSON через Jackson</li>
-     *   <li>{@code null} → отправляется пустое тело</li>
      * </ul>
      * </p>
      *
      * @param request запрос, содержащий тело
      * @return {@link HttpRequest.BodyPublisher} для отправки тела
-     * @throws ru.vych.http.impl.exceptions.HttpClientHandleResponseException если не удалось сериализовать payload в JSON
+     * @throws HttpClientHandleResponseException если не удалось сериализовать payload в JSON
      */
     private HttpRequest.BodyPublisher buildBody(Request request) throws HttpClientException {
         Object payload = request.getPayload();
@@ -299,28 +324,181 @@ public class HttpClientImpl implements HttpClient {
      * @param request запрос, содержащий путь и параметры
      * @return полный URI для HTTP-запроса
      */
-    private URI buildUri(Request request) {
-        var root = config.getRoot().endsWith("/") ? config.getRoot() : config.getRoot() + "/";
+    protected URI buildUri(Request request) {
+        var root = config.getRoot().endsWith("/")
+                ? config.getRoot()
+                : config.getRoot() + "/";
 
-        var path = request.getUrl().startsWith("/") ? request.getUrl().substring(1) : request.getUrl();
-        var pathParams = String.join("/", request.getPathParams());
+        var path = request.getUrl().startsWith("/")
+                ? request.getUrl().substring(1)
+                : request.getUrl();
+
+        var pathParams = request.getPathParams().stream()
+                .map(this::encodePathSegment)
+                .collect(Collectors.joining("/"));
 
         var queryParams = request.getQueryParams().entrySet()
                 .stream()
-                .map(e -> e.getKey() + "=" + e.getValue())
+                .map(entry -> encodeQueryComponent(entry.getKey())
+                        + "="
+                        + encodeQueryComponent(entry.getValue()))
                 .collect(Collectors.joining("&"));
 
-        var fullPathBuilder = new StringBuilder(root);
-        fullPathBuilder.append(path);
+        var uri = new StringBuilder()
+                .append(encodeRoot(root))
+                .append(encodePath(path));
+
         if (!pathParams.isEmpty()) {
-            fullPathBuilder.append("/");
-            fullPathBuilder.append(pathParams);
+            uri.append("/")
+                    .append(pathParams);
         }
+
         if (!queryParams.isEmpty()) {
-            fullPathBuilder.append("?");
-            fullPathBuilder.append(queryParams);
+            uri.append("?")
+                    .append(queryParams);
         }
-        return URI.create(fullPathBuilder.toString());
+
+        return URI.create(uri.toString());
+    }
+
+    /**
+     * Кодирует корневой URL URI.
+     * <p>
+     * Разрешённые символы: {@code :} и {@code /}.
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodeRoot(String value) {
+        return encodeUri(value, c -> c == ':' || c == '/');
+    }
+
+    /**
+     * Кодирует путь URI.
+     * <p>
+     * Разрешённые символы: {@code /}.
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodePath(String value) {
+        return encodeUri(value, c -> c == '/');
+    }
+
+    /**
+     * Кодирует сегмент пути (path segment).
+     * <p>
+     * Разрешённые символы: none (все запрещённые символы кодируются).
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodePathSegment(String value) {
+        return encodeUri(value, c -> false);
+    }
+
+    /**
+     * Кодирует компонент query-строки.
+     * <p>
+     * Разрешённые символы: none (все запрещённые символы кодируются).
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodeQueryComponent(String value) {
+        return encodeUri(value, c -> false);
+    }
+
+    /**
+     * Универсальное кодирование URI-компонента.
+     * <p>
+     * Кодирует строку в percent-encoding (RFC 3986), сохраняя
+     * уже закодированные последовательности (например {@code %20}).
+     * Символы, которые являются допустимыми в URI без кодирования
+     * (unreserved: A-Z, a-z, 0-9, -, ., _, ~), а также символы,
+     * разрешённые через {@code allowed}, не кодируются.
+     * </p>
+     *
+     * @param value   исходная строка; может быть {@code null}
+     * @param allowed предикат, определяющий дополнительные разрешённые символы
+     * @return закодированная строка; пустая строка если {@code value == null}
+     */
+    private String encodeUri(String value, IntPredicate allowed) {
+        if (value == null) {
+            return "";
+        }
+        var bytes = value.getBytes(StandardCharsets.UTF_8);
+        var result = new StringBuilder(bytes.length);
+
+        for (int i = 0; i < bytes.length; i++) {
+            var c = bytes[i] & 0xFF;
+
+            // Сохраняем уже существующий percent-encoding.
+            // Например: %20, %D0%90, %2F.
+            if (c == '%'
+                    && i + 2 < bytes.length
+                    && isHex(bytes[i + 1])
+                    && isHex(bytes[i + 2])) {
+
+                result.append('%')
+                        .append((char) (bytes[i + 1] & 0xFF))
+                        .append((char) (bytes[i + 2] & 0xFF));
+
+                i += 2;
+                continue;
+            }
+
+            if (isUnreserved(c) || allowed.test(c)) {
+                result.append((char) c);
+            } else {
+                result.append('%')
+                        .append(HEX[c >> 4])
+                        .append(HEX[c & 0x0F]);
+            }
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * Проверяет, является ли символ допустимым в URI без кодирования.
+     * <p>
+     * Согласно RFC 3986, unreserved characters — это:
+     * {@code A-Z a-z 0-9 - . _ ~}.
+     * </p>
+     *
+     * @param c код символа
+     * @return {@code true}, если символ является unreserved
+     */
+    private boolean isUnreserved(int c) {
+        return c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9'
+                || c == '-'
+                || c == '.'
+                || c == '_'
+                || c == '~';
+    }
+
+    /**
+     * Проверяет, является ли байт шестнадцатеричной цифрой.
+     * <p>
+     * Поддерживаются цифры {@code 0-9}, буквы {@code A-F} и {@code a-f}.
+     * </p>
+     *
+     * @param value проверяемый байт
+     * @return {@code true}, если байт является шестнадцатеричной цифрой
+     */
+    private boolean isHex(byte value) {
+        var c = value & 0xFF;
+
+        return c >= '0' && c <= '9'
+                || c >= 'A' && c <= 'F'
+                || c >= 'a' && c <= 'f';
     }
 
     /**
@@ -352,7 +530,7 @@ public class HttpClientImpl implements HttpClient {
      * @param body          тело ответа в виде строки
      * @param responseClass целевой класс для десериализации
      * @return десериализованный объект или {@code null}
-     * @throws ru.vych.http.impl.exceptions.HttpClientHandleResponseException если не удалось десериализовать JSON
+     * @throws HttpClientHandleResponseException если не удалось десериализовать JSON
      */
     private Object mapBodyToResponseClass(String body, Class<?> responseClass) throws HttpClientException {
         if (responseClass == String.class) {

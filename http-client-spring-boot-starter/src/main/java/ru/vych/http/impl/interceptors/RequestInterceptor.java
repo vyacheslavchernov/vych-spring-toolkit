@@ -6,11 +6,6 @@ import ru.vych.http.impl.entities.Request;
 /**
  * Интерфейс перехватчика (interceptor) для предварительной обработки HTTP-запросов.
  * <p>
- * Все зарегистрированные {@code RequestInterceptor} вызываются последовательно
- * в порядке добавления перед отправкой каждого запроса через
- * {@link ru.vych.http.impl.HttpClient#execute(Request)}.
- * </p>
- * <p>
  * Интерсепторы могут использоваться для:
  * <ul>
  *   <li>Добавления или модификации заголовков</li>
@@ -32,8 +27,8 @@ public interface RequestInterceptor {
      * или выполнять побочные действия (логирование, метрики).
      * </p>
      *
-     * @param client  клиент, который будет выполнять запрос; не должен быть {@code null}
-     * @param request запрос для предварительной обработки; не должен быть {@code null}
+     * @param client  клиент, который будет выполнять запрос; не {@code null}
+     * @param request запрос для предварительной обработки; не {@code null}
      */
     void handle(HttpClient client, Request request);
 }

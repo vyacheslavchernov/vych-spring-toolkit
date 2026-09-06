@@ -13,7 +13,7 @@ import java.net.CookieHandler;
  * и получения обработчика cookie. Реализация — {@link ru.vych.http.impl.HttpClientImpl}.
  * </p>
  * <p>
- * Клиент поддерживает pipeline-обработку запросов и ответов через
+ * Клиент поддерживает обработку запросов и ответов через
  * {@link ru.vych.http.impl.interceptors.RequestInterceptor} и
  * {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.
  * </p>
@@ -28,10 +28,10 @@ public interface HttpClient {
      * <p>
      * Процесс выполнения:
      * <ol>
-     *   <li>Последовательно вызываются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
+     *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
      *   <li>Формируется и отправляется HTTP-запрос через {@code java.net.http.HttpClient}.</li>
      *   <li>Ответ парсится: body десериализуется в {@link Request#getResponseClass()} (если указан) или возвращается как raw-байты.</li>
-     *   <li>Последовательно вызываются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
+     *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
      * </ol>
      * </p>
      *

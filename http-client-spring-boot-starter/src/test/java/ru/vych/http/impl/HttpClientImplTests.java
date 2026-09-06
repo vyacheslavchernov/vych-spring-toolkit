@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.checkdata.HttpClientImplBuildResponseCheckData;
+import ru.vych.http.impl.checkdata.HttpClientImplBuildUriCheckData;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.DummyDto;
 import ru.vych.http.impl.entities.Header;
@@ -35,8 +36,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders.SERVICE_CODE;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.CREATION_ERROR_LOG_SERVICE_IS_NULL;
@@ -226,6 +226,27 @@ class HttpClientImplTests {
         assertThat(response.getHeaders())
                 .describedAs("Заголовки не соответствуют ожидаемым")
                 .containsExactlyElementsOf(expectedHeaders);
+    }
+
+    /**
+     * Проверяет корректность построения URI из {@link Request}:
+     * объединение корневого URL из конфигурации с путём, path-параметрами и query-параметрами.
+     */
+    @ParameterizedTest
+    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#httpClientImplBuildUriArgsProvider")
+    @DisplayName("Проверка корректного построения URI")
+    public void buildUri(HttpClientImplBuildUriCheckData checkData) throws HttpClientException {
+        var client = new HttpClientImpl(checkData.getConfig(), logService, null, null);
+
+        assertThatCode(() -> client.buildUri(checkData.getRequest()))
+                .describedAs("При построении URI произошла ошибка")
+                .doesNotThrowAnyException();
+        var actualUri = client.buildUri(checkData.getRequest());
+
+        assertThat(actualUri)
+                .describedAs("URI не соответствует ожидаемому")
+                .isNotNull()
+                .isEqualTo(checkData.getExpectedURI());
     }
 
     /**

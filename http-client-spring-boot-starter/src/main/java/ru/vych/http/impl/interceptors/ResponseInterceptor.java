@@ -6,11 +6,6 @@ import ru.vych.http.impl.entities.Response;
 /**
  * Интерфейс перехватчика (interceptor) для последующей обработки HTTP-ответов.
  * <p>
- * Все зарегистрированные {@code ResponseInterceptor} вызываются последовательно
- * в порядке добавления после получения каждого ответа через
- * {@link ru.vych.http.impl.HttpClient#execute(ru.vych.http.impl.entities.Request)}.
- * </p>
- * <p>
  * Интерсепторы могут использоваться для:
  * <ul>
  *   <li>Валидации ответа (статус-код, заголовки)</li>
@@ -32,8 +27,8 @@ public interface ResponseInterceptor {
      * или выполнять побочные действия (логирование, метрики).
      * </p>
      *
-     * @param client   клиент, который выполнял запрос; не должен быть {@code null}
-     * @param response ответ для обработки; не должен быть {@code null}
+     * @param client   клиент, который выполнял запрос; не {@code null}
+     * @param response ответ для обработки; не {@code null}
      */
     void handle(HttpClient client, Response response);
 }
