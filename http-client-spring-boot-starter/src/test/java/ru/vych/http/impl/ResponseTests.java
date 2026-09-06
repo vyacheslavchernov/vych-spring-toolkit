@@ -4,11 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.junit.jupiter.MockitoExtension;
+import ru.vych.http.impl.checkdata.ResponseBodyCastingCheckData;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.DummyDto;
 import ru.vych.http.impl.entities.Request;
@@ -27,64 +25,70 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Тесты для класса {@link Response}, включая проверку кастомизации тела ответа
  * через {@link Response#getCastedBody()}.
  */
-@ExtendWith(MockitoExtension.class)
 @DisplayName("Тесты для класса Response")
 public class ResponseTests {
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
-     * Поставщик аргументов для параметризованного теста {@link #bodyCastingTest(Class, byte[], Object, String)}.
-     * Содержит комбинации {@code responseClass}, байтов тела, десериализованного объекта и raw-строки
-     * для различных сценариев: DTO, List, Map, String, null, byte.class, byte[].class.
+     * Поставщик аргументов для параметризованного теста {@link #bodyCastingTest(ResponseBodyCastingCheckData)}.
+     * <p>
+     * Возвращает Stream с тестовыми данными для проверки {@link Response#getCastedBody()}:
+     * <ul>
+     *   <li>{@code String.class} — десериализация строки;</li>
+     *   <li>{@code DummyDto.class} — десериализация DTO через Jackson;</li>
+     *   <li>{@code List.class} — десериализация списка;</li>
+     *   <li>{@code Map.class} — десериализация мапы;</li>
+     *   <li>{@code null} — отсутствие класса ответа;</li>
+     *   <li>{@code byte.class} — примитивный тип (не поддерживается, возвращает null);</li>
+     *   <li>{@code byte[].class} — массив байт (не поддерживается, возвращает null).</li>
+     * </ul>
+     * </p>
+     *
+     * @return Stream с тестовыми данными {@link ResponseBodyCastingCheckData}
+     * @throws JsonProcessingException если ошибка сериализации тестовых данных
      */
-    private static Stream<Arguments> bodyCastingArgsProvider() throws JsonProcessingException {
+    private static Stream<ResponseBodyCastingCheckData> bodyCastingArgsProvider() throws JsonProcessingException {
+        var string = "Hello, world!";
         var dummyDto = new DummyDto("Hello, world!");
         var list = List.of("value1", "value2");
         var map = Map.of("key1", "value1", "key2", "value2");
 
         return Stream.of(
-                Arguments.of(
-                        String.class,
-                        "Hello, world!".getBytes(StandardCharsets.UTF_8),
-                        "Hello, world!",
-                        "Hello, world!"
-                ),
-                Arguments.of(
-                        DummyDto.class,
-                        OBJECT_MAPPER.writeValueAsBytes(dummyDto),
-                        dummyDto,
-                        OBJECT_MAPPER.writeValueAsString(dummyDto)
-                ),
-                Arguments.of(
-                        List.class,
-                        OBJECT_MAPPER.writeValueAsBytes(list),
-                        list,
-                        OBJECT_MAPPER.writeValueAsString(list)
-                ),
-                Arguments.of(
-                        Map.class,
-                        OBJECT_MAPPER.writeValueAsBytes(map),
-                        map,
-                        OBJECT_MAPPER.writeValueAsString(map)
-                ),
-                Arguments.of(
-                        null,
-                        "Hello, world!".getBytes(StandardCharsets.UTF_8),
-                        null,
-                        "Hello, world!"
-                ),
-                Arguments.of(
-                        byte.class,
-                        "Hello, world!".getBytes(StandardCharsets.UTF_8),
-                        null,
-                        null
-                ),
-                Arguments.of(
-                        byte[].class,
-                        "Hello, world!".getBytes(StandardCharsets.UTF_8),
-                        null,
-                        null
-                )
+                new ResponseBodyCastingCheckData()
+                        .setResponseClass(String.class)
+                        .setBodyBytes(string.getBytes(StandardCharsets.UTF_8))
+                        .setBody(string)
+                        .setRawBody(string),
+                new ResponseBodyCastingCheckData()
+                        .setResponseClass(DummyDto.class)
+                        .setBodyBytes(OBJECT_MAPPER.writeValueAsBytes(dummyDto))
+                        .setBody(dummyDto)
+                        .setRawBody(OBJECT_MAPPER.writeValueAsString(dummyDto)),
+                new ResponseBodyCastingCheckData()
+                        .setResponseClass(List.class)
+                        .setBodyBytes(OBJECT_MAPPER.writeValueAsBytes(list))
+                        .setBody(list)
+                        .setRawBody(OBJECT_MAPPER.writeValueAsString(list)),
+                new ResponseBodyCastingCheckData()
+                        .setResponseClass(Map.class)
+                        .setBodyBytes(OBJECT_MAPPER.writeValueAsBytes(map))
+                        .setBody(map)
+                        .setRawBody(OBJECT_MAPPER.writeValueAsString(map)),
+                new ResponseBodyCastingCheckData()
+                        .setResponseClass(null)
+                        .setBodyBytes(string.getBytes(StandardCharsets.UTF_8))
+                        .setBody(null)
+                        .setRawBody(null),
+                new ResponseBodyCastingCheckData()
+                        .setResponseClass(byte.class)
+                        .setBodyBytes(string.getBytes(StandardCharsets.UTF_8))
+                        .setBody(null)
+                        .setRawBody(null),
+                new ResponseBodyCastingCheckData()
+                        .setResponseClass(byte[].class)
+                        .setBodyBytes(string.getBytes(StandardCharsets.UTF_8))
+                        .setBody(null)
+                        .setRawBody(null)
         );
     }
 
@@ -99,29 +103,27 @@ public class ResponseTests {
     @ParameterizedTest
     @MethodSource("bodyCastingArgsProvider")
     @DisplayName("Тест каста тела ответа")
-    public void bodyCastingTest(
-            Class<?> responseClass,
-            byte[] bodyBytes,
-            Object body,
-            String rawBody
-    ) throws HttpClientInvalidRequestException {
+    public void bodyCastingTest(ResponseBodyCastingCheckData checkData) throws HttpClientInvalidRequestException {
         var response = new Response(
                 "uuid",
                 Request.builder()
                         .setMethod(HttpMethod.GET)
-                        .setResponseClass(responseClass)
+                        .setResponseClass(checkData.getResponseClass())
                         .build(),
                 200,
-                bodyBytes,
-                rawBody,
-                body,
+                checkData.getBodyBytes(),
+                checkData.getRawBody(),
+                checkData.getBody(),
                 new ArrayList<>()
         );
 
         Assertions.assertThatCode(response::getCastedBody).doesNotThrowAnyException();
         var castedBody = response.getCastedBody();
 
-        if (responseClass == null || responseClass == byte.class || responseClass == byte[].class) {
+        if (checkData.getResponseClass() == null
+                || checkData.getResponseClass() == byte.class
+                || checkData.getResponseClass() == byte[].class
+        ) {
             assertThat(castedBody)
                     .describedAs("Проверка каста тела ответа")
                     .isNull();
@@ -129,8 +131,8 @@ public class ResponseTests {
             assertThat(castedBody)
                     .describedAs("Проверка каста тела ответа")
                     .isNotNull()
-                    .isInstanceOf(responseClass)
-                    .isEqualTo(body);
+                    .isInstanceOf(checkData.getResponseClass())
+                    .isEqualTo(checkData.getBody());
         }
     }
 }
