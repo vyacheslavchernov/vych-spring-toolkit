@@ -15,7 +15,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.checkdata.HttpClientImplBuildResponseCheckData;
+import ru.vych.http.impl.checkdata.HttpClientImplBuildUriCheckData;
 import ru.vych.http.impl.common.HttpMethod;
+import ru.vych.http.impl.entities.CookieEntry;
 import ru.vych.http.impl.entities.DummyDto;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
@@ -27,7 +29,10 @@ import ru.vych.http.impl.interceptors.ResponseInterceptor;
 import ru.vych.logger.impl.LogService;
 
 import javax.net.ssl.SSLSession;
+import java.net.CookieHandler;
+import java.net.HttpCookie;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
@@ -35,8 +40,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders.SERVICE_CODE;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.CREATION_ERROR_LOG_SERVICE_IS_NULL;
@@ -229,6 +233,51 @@ class HttpClientImplTests {
     }
 
     /**
+     * Проверяет корректность построения URI из {@link Request}:
+     * объединение корневого URL из конфигурации с путём, path-параметрами и query-параметрами.
+     */
+    @ParameterizedTest
+    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#httpClientImplBuildUriArgsProvider")
+    @DisplayName("Проверка корректного построения URI")
+    public void buildUri(HttpClientImplBuildUriCheckData checkData) throws HttpClientException {
+        var client = new HttpClientImpl(checkData.getConfig(), logService, null, null);
+
+        assertThatCode(() -> client.buildUri(checkData.getRequest()))
+                .describedAs("При построении URI произошла ошибка")
+                .doesNotThrowAnyException();
+        var actualUri = client.buildUri(checkData.getRequest());
+
+        assertThat(actualUri)
+                .describedAs("URI не соответствует ожидаемому")
+                .isNotNull()
+                .isEqualTo(checkData.getExpectedURI());
+    }
+
+    /**
+     * Проверяет, что при инициализации клиента дефолтные cookies из {@code CookieEntry}
+     * корректно добавляются в {@code CookieManager}.
+     */
+    @Test
+    @DisplayName("Проверка работы CookieManager с дефолтными cookies")
+    public void cookieManagerWithDefaultCookies() throws HttpClientException, URISyntaxException {
+        List<CookieEntry> cookieEntries = List.of(
+                new CookieEntry(new URI("https://example1.com"), new HttpCookie("test1", "test1")),
+                new CookieEntry(new URI("https://example2.com"), new HttpCookie("test2", "test2")),
+                new CookieEntry(new URI("https://example3.com"), new HttpCookie("test3", "test3"))
+        );
+
+        var client = new HttpClientImpl(
+                new HttpClientConfig(SERVICE_CODE).setCookies(cookieEntries),
+                logService, null, null
+        );
+
+        assertThat(client.getCookieManager().getCookieStore().getCookies())
+                .describedAs("CookieManager не содержит ожидаемых cookies")
+                .containsAll(cookieEntries.stream().map(CookieEntry::getCookie).toList());
+
+    }
+
+    /**
      * Создаёт валидный экземпляр {@code HttpClientImpl}.
      */
     private HttpClientImpl getValidClient() throws HttpClientException {
@@ -304,7 +353,13 @@ class HttpClientImplTests {
                                                 .describedAs("Таймаут соединения не совпадает с переданным")
                                                 .isNotNull()
                                                 .isEqualTo(config.getTimeout())
-                                )
+                                ),
+
+                        client -> assertThat(client)
+                                .describedAs("CookieManager не должен быть null")
+                                .extracting("cookieManager")
+                                .isNotNull()
+                                .isInstanceOf(CookieHandler.class)
                 );
     }
 

@@ -1,8 +1,12 @@
 package ru.vych.http.controllers;
 
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -21,6 +25,7 @@ public class GetTestController {
     public static final String GET_MANY_QUERY_ENDPOINT = "/getManyQuery";
     public static final String GET_PATH_ENDPOINT = "/getQuery";
     public static final String GET_PATH_AND_QUERY_ENDPOINT = "/getPathNQuery";
+    public static final String GET_HEADERS_ENDPOINT = "/getHeaders";
 
     public static final String HELLO_TEXT = "Hello, World!";
 
@@ -48,7 +53,7 @@ public class GetTestController {
                         .stream()
                         .collect(Collectors.toMap(
                                 Map.Entry::getKey,
-                                e -> e.getValue().get(0)
+                                e -> e.getValue().getFirst()
                         ));
         return Response.ok().entity(params).build();
     }
@@ -65,5 +70,13 @@ public class GetTestController {
     @Produces(APPLICATION_JSON)
     public Response getPathAndQuery(@PathParam(UUID_PARAM_KEY) String key, @QueryParam(UUID_PARAM_KEY) String value) {
         return Response.ok().entity(Map.of(key, value)).build();
+    }
+
+    @GET
+    @Path(GET_HEADERS_ENDPOINT)
+    @Produces(APPLICATION_JSON)
+    public Response getHeaders(@Context HttpHeaders httpHeaders) {
+        Map<String, List<String>> headers = httpHeaders.getRequestHeaders();
+        return Response.ok().entity(headers).build();
     }
 }
