@@ -15,4 +15,6 @@ public final class HttpExceptionsMessages {
     public static String RESPONSE_ERROR_CANT_DESERIALIZE_BODY = "Ошибка при десериализации тела ответа";
     public static String REQUEST_ERROR_CANT_HANDLE_BODY = "Ошибка при обработке тела запроса";
     public static String RESPONSE_ERROR_GENERIC = "Ошибка при обработке ответа";
+    public static String REQUEST_ERROR_INVALID_METHOD = "Для запроса необходимо указать используемый HTTP метод.";
+    public static String REQUEST_ERROR_INVALID_CONTENT_TYPE = "Для POST запроса необходимо указать тип передаваемого контента.";
 }

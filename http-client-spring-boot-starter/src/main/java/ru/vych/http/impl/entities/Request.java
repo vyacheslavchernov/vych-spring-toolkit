@@ -7,6 +7,9 @@ import ru.vych.http.impl.exceptions.HttpClientInvalidRequestException;
 
 import java.util.*;
 
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_CONTENT_TYPE;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_METHOD;
+
 /**
  * Описание HTTP-запроса для выполнения через {@link ru.vych.http.impl.HttpClient}.
  * <p>
@@ -202,11 +205,11 @@ public class Request {
          */
         public Request build() throws HttpClientInvalidRequestException {
             if (method == null) {
-                throw new HttpClientInvalidRequestException("Для запроса необходимо указать используемый HTTP метод.");
+                throw new HttpClientInvalidRequestException(REQUEST_ERROR_INVALID_METHOD);
             }
 
             if ((method == HttpMethod.POST && payload != null) && (contentType == null || contentType.isEmpty())) {
-                throw new HttpClientInvalidRequestException("Для POST запроса необходимо указать тип передаваемого контента.");
+                throw new HttpClientInvalidRequestException(REQUEST_ERROR_INVALID_CONTENT_TYPE);
             }
 
             if (contentType != null) {
