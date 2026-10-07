@@ -6,8 +6,7 @@ import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.vych.http.controllers.GetTestController;
-import ru.vych.http.controllers.PostTestController;
+import ru.vych.http.controllers.*;
 
 import java.net.URI;
 
@@ -21,8 +20,11 @@ public class TestServerConfiguration {
 
         ResourceConfig config =
                 new ResourceConfig()
+                        .register(CookieTestController.class)
+                        .register(ErrorTestController.class)
                         .register(GetTestController.class)
                         .register(PostTestController.class)
+                        .register(RedirectTestController.class)
                         .register(JacksonFeature.class)
                         .register(ExceptionHandler.class);
 

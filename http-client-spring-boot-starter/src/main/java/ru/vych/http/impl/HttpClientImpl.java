@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import ru.vych.http.config.HttpClientConfig;
+import ru.vych.http.impl.common.CookiesPolicies;
 import ru.vych.http.impl.common.HttpStatus;
 import ru.vych.http.impl.entities.CookieEntry;
 import ru.vych.http.impl.entities.Header;
@@ -18,17 +19,15 @@ import ru.vych.http.impl.interceptors.RequestInterceptor;
 import ru.vych.http.impl.interceptors.ResponseInterceptor;
 import ru.vych.logger.impl.LogService;
 
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
+import java.net.HttpCookie;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
@@ -43,14 +42,19 @@ import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
  * а также настройку cookie, редиректов и тайм-аутов через {@link HttpClientConfig}.
  * </p>
  * <p>
+ * <b>Изоляция cookie:</b> каждый экземпляр клиента имеет собственное хранилище cookies
+ * ({@code ConcurrentHashMap}), что обеспечивает полную изоляцию состояния между клиентами.
+ * Глобальный {@code CookieHandler} не используется.
+ * </p>
+ * <p>
  * <b>Процесс выполнения запроса:</b>
  * <ol>
  *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
  *   <li>Формируется URI из корневого URL конфига + путь запроса + path- и query-параметры.</li>
- *   <li>Добавляются заголовки: сначала дефолтные из конфига, затем — из запроса.</li>
+ *   <li>Добавляются заголовки: сначала дефолтные из конфига, затем — из запроса, затем — cookies из внутреннего хранилища.</li>
  *   <li>Для POST тело запроса сериализуется (String → строка, byte[] → байты, остальное → JSON через Jackson).</li>
  *   <li>Запрос отправляется через {@code java.net.http.HttpClient}.</li>
- *   <li>Ответ парсится: body десериализуется в {@link ru.vych.http.impl.entities.Request#getResponseClass()}.</li>
+ *   <li>Ответ парсится: body десериализуется в {@link ru.vych.http.impl.entities.Request#getResponseClass()}, cookies сохраняются в хранилище.</li>
  *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
  * </ol>
  * </p>
@@ -77,8 +81,13 @@ public class HttpClientImpl implements HttpClient {
     private final List<RequestInterceptor> requestInterceptors = new ArrayList<>();
     private final List<ResponseInterceptor> responseInterceptors = new ArrayList<>();
 
-    @Getter
-    private final CookieManager cookieManager;
+    /**
+     * Внутреннее хранилище cookies для данного экземпляра клиента.
+     * Ключ — хост (домен), значение — список {@link HttpCookie}.
+     * Полностью изолировано от других экземпляров {@code HttpClient}.
+     */
+    private final Map<String, List<HttpCookie>> cookieStore = new ConcurrentHashMap<>();
+    private final CookiesPolicies cookiePolicy;
 
     /**
      * Создаёт и настраивает экземпляр HTTP-клиента.
@@ -134,31 +143,20 @@ public class HttpClientImpl implements HttpClient {
             throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT, e);
         }
 
-        cookieManager = new CookieManager();
-
         if (config.getCookiePolicy() == null) {
             throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL);
         }
-
-        switch (config.getCookiePolicy()) {
-            case ACCEPT_ALL:
-                cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-                break;
-            case ACCEPT_NONE:
-                cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_NONE);
-                break;
-            case ACCEPT_ORIGINAL_SERVER:
-                cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
-                break;
-        }
+        cookiePolicy = config.getCookiePolicy();
 
         if (config.getCookies() == null) {
             throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL);
         }
         for (CookieEntry cookie : config.getCookies()) {
-            cookieManager.getCookieStore().add(cookie.getUri(), cookie.getCookie());
+            String host = cookie.getUri().getHost();
+            cookieStore
+                    .computeIfAbsent(host, k -> new CopyOnWriteArrayList<>())
+                    .add(cookie.getCookie());
         }
-        clientBuilder.cookieHandler(cookieManager);
 
         this.client = clientBuilder.build();
 
@@ -506,6 +504,37 @@ public class HttpClientImpl implements HttpClient {
     private void addHeaders(Builder builder, Request request) {
         config.getHeaders().forEach(builder::header);
         request.getHeaders().forEach(header -> builder.header(header.name(), header.value()));
+
+        // Добавляем cookies для текущего URI
+        URI uri = buildUri(request);
+        addCookiesToRequest(builder, uri);
+    }
+
+    /**
+     * Добавляет cookies в заголовок {@code Cookie} для указанного URI.
+     * <p>
+     * Отправляются только cookies, чей хост совпадает с хостом целевого URI.
+     * </p>
+     *
+     * @param builder builder для {@link HttpRequest}
+     * @param uri     целевой URI
+     */
+    private void addCookiesToRequest(Builder builder, URI uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            return;
+        }
+
+        List<HttpCookie> cookies = cookieStore.getOrDefault(host, Collections.emptyList());
+
+        if (!cookies.isEmpty()) {
+            String cookieHeader = cookies.stream()
+                    .map(cookie -> cookie.getName() + "=" + cookie.getValue())
+                    .collect(Collectors.joining("; "));
+            if (!cookieHeader.isEmpty()) {
+                builder.header("Cookie", cookieHeader);
+            }
+        }
     }
 
     /**
@@ -558,6 +587,11 @@ public class HttpClientImpl implements HttpClient {
     protected Response buildResponse(HttpResponse<byte[]> httpResponse, Request request) throws HttpClientException {
         String bodyText = new String(httpResponse.body(), StandardCharsets.UTF_8);
         var rsType = request.getResponseClass();
+
+        // Сохраняем cookies из ответа
+        URI uri = buildUri(request);
+        parseSetCookiesFromResponse(httpResponse, uri);
+
         return new Response(
                 request.getUuid(),
                 request,
@@ -566,11 +600,77 @@ public class HttpClientImpl implements HttpClient {
                 httpResponse.statusCode() != HttpStatus.OK || rsType != null && rsType != byte.class && rsType != byte[].class
                         ? bodyText
                         : null,
-                httpResponse.statusCode() != HttpStatus.OK
-                        ? null
-                        : mapBodyToResponseClass(bodyText, request.getResponseClass()),
+                mapBodyToResponseClass(bodyText, request.getResponseClass()),
                 extractHeaders(httpResponse)
         );
+    }
+
+    @Override
+    public List<HttpCookie> getCookies(String host) {
+        List<HttpCookie> cookies = cookieStore.get(host);
+        return cookies != null ? List.copyOf(cookies) : Collections.emptyList();
+    }
+
+    @Override
+    public void clearCookies(String host) {
+        cookieStore.remove(host);
+    }
+
+    @Override
+    public Map<String, List<HttpCookie>> getAllCookies() {
+        Map<String, List<HttpCookie>> result = new HashMap<>();
+        cookieStore.forEach((host, cookies) -> result.put(host, List.copyOf(cookies)));
+        return Collections.unmodifiableMap(result);
+    }
+
+    /**
+     * Парсит заголовок {@code Set-Cookie} из HTTP-ответа и сохраняет cookies
+     * во внутреннее хранилище с учётом {@link CookiesPolicies}.
+     * <p>
+     * Если политика {@link CookiesPolicies#ACCEPT_ALL} — все cookies принимаются.
+     * Если {@link CookiesPolicies#ACCEPT_NONE} — cookies игнорируются.
+     * Если {@link CookiesPolicies#ACCEPT_ORIGINAL_SERVER} — cookies принимаются
+     * только если хост ответа совпадает с корневым URL клиента.
+     * </p>
+     *
+     * @param httpResponse HTTP-ответ
+     * @param uri          URI ответа (для определения хоста)
+     */
+    private void parseSetCookiesFromResponse(HttpResponse<?> httpResponse, URI uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            return;
+        }
+
+        // Проверяем политику
+        if (cookiePolicy == CookiesPolicies.ACCEPT_NONE) {
+            return;
+        }
+
+        // ACCEPT_ORIGINAL_SERVER — проверяем, что хост совпадает с корнем клиента
+        if (cookiePolicy == CookiesPolicies.ACCEPT_ORIGINAL_SERVER) {
+            String rootHost = config.getRoot().replaceAll("^https?://", "").split("/")[0];
+            // rootHost может быть "localhost:9090" или просто "localhost"
+            // host — это просто "localhost" (без порта)
+            String rootHostWithoutPort = rootHost.split(":")[0];
+            if (!host.equals(rootHostWithoutPort)) {
+                return;
+            }
+        }
+
+        // Парсим Set-Cookie заголовки
+        List<String> setCookieHeaders = httpResponse.headers()
+                .map()
+                .getOrDefault("set-cookie", Collections.emptyList());
+
+        for (String setCookieHeader : setCookieHeaders) {
+            List<HttpCookie> cookies = HttpCookie.parse(setCookieHeader);
+            for (HttpCookie cookie : cookies) {
+                cookieStore
+                        .computeIfAbsent(host, k -> new CopyOnWriteArrayList<>())
+                        .add(cookie);
+            }
+        }
     }
 
     /**

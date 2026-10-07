@@ -187,6 +187,23 @@ List<Header> headers = response.getHeaders();
 | `version` | `HttpClient.Version` | `HTTP_1_1`            | Версия HTTP-протокола |
 | `logRequests` | `boolean` | `true`                | Логировать запросы и ответы через logger-spring-boot-starter |
 
+## Управление cookie
+
+Каждый экземпляр HTTP-клиента имеет **полностью изолированное** хранилище cookies — глобальный `CookieHandler` не используется. Cookies автоматически сохраняются из заголовков `Set-Cookie` ответов и отправляются в запросах к соответствующим хостам.
+
+### Получение cookies
+
+```java
+// Cookies для конкретного хоста
+List<HttpCookie> cookies = httpClient.getCookies("api.example.com");
+
+// Все cookies (карта "хост → список cookies")
+Map<String, List<HttpCookie>> allCookies = httpClient.getAllCookies();
+
+// Очистка cookies для хоста
+httpClient.clearCookies("api.example.com");
+```
+
 ### Политика cookie
 
 Для управления cookie используется `CookiesPolicies`:

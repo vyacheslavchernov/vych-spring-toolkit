@@ -4,7 +4,9 @@ import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.entities.Response;
 import ru.vych.http.impl.exceptions.HttpClientException;
 
-import java.net.CookieHandler;
+import java.net.HttpCookie;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Основной интерфейс HTTP-клиента.
@@ -45,9 +47,31 @@ public interface HttpClient {
     Response execute(Request request) throws HttpClientException;
 
     /**
-     * Возвращает обработчик cookie текущего клиента.
+     * Возвращает копию хранилища cookies для данного хоста.
+     *
+     * @param host хост для получения cookies
+     * @return список cookies, или пустой список если cookies отсутствуют
      */
-    CookieHandler getCookieManager();
+    List<HttpCookie> getCookies(String host);
+
+    /**
+     * Возвращает полную копию хранилища cookies.
+     * <p>
+     * Ключ — хост (домен), значение — список {@link HttpCookie} для этого хоста.
+     * Возвращаемая карта является неизменяемой копией, модификации не влияют
+     * на внутреннее хранилище клиента.
+     * </p>
+     *
+     * @return неизменяемая карта "хост → список cookies"
+     */
+    Map<String, List<HttpCookie>> getAllCookies();
+
+    /**
+     * Очищает хранилище cookies для данного хоста.
+     *
+     * @param host хост для очистки cookies
+     */
+    void clearCookies(String host);
 
     /**
      * Возвращает уникальный идентификатор данного экземпляра клиента.
