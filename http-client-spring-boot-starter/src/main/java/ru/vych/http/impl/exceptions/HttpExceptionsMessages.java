@@ -1,0 +1,20 @@
+package ru.vych.http.impl.exceptions;
+
+/**
+ * Набор констант с сообщениями для исключений {@link HttpClientException},
+ * {@link HttpClientConfigurationException} и {@link HttpClientHandleResponseException}.
+ */
+public final class HttpExceptionsMessages {
+    public static String CREATION_ERROR_CONFIGURATION_IS_NULL = "Ошибка создания клиента: Конфигурация не может быть null";
+    public static String CREATION_ERROR_CONFIGURATION_IS_INCORRECT = "Ошибка создания клиента: Некорректная конфигурация http-клиента";
+    public static String CREATION_ERROR_CONFIGURATION_IS_INCORRECT_ROOT_CANT_BE_NULL = "Ошибка создания клиента: root не может быть null";
+    public static String CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL = "Ошибка создания клиента: политика cookie не может быть null";
+    public static String CREATION_ERROR_LOG_SERVICE_IS_NULL = "Ошибка создания клиента: logService не может быть null";
+    public static String CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL = "Ошибка создания клиента: дефолтные cookie не могут быть null";
+    public static String REQUEST_ERROR_GENERIC = "Ошибка при отправке запроса";
+    public static String RESPONSE_ERROR_CANT_DESERIALIZE_BODY = "Ошибка при десериализации тела ответа";
+    public static String REQUEST_ERROR_CANT_HANDLE_BODY = "Ошибка при обработке тела запроса";
+    public static String RESPONSE_ERROR_GENERIC = "Ошибка при обработке ответа";
+    public static String REQUEST_ERROR_INVALID_METHOD = "Для запроса необходимо указать используемый HTTP метод.";
+    public static String REQUEST_ERROR_INVALID_CONTENT_TYPE = "Для POST запроса необходимо указать тип передаваемого контента.";
+}

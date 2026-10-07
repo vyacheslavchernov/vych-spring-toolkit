@@ -1,0 +1,79 @@
+name: Tests
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  tests:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Maven tests
+        run: mvn --batch-mode --update-snapshots verify
+
+      # dorny/test-reporter не видит target/, потому что эти файлы
+      # не находятся под git. Поэтому собираем XML в отдельную директорию.
+      - name: Collect test results
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p test-results
+
+          find . -type f \
+            -path '*/target/surefire-reports/*.xml' \
+            -exec cp {} test-results/ \;
+
+          find . -type f \
+            -path '*/target/failsafe-reports/*.xml' \
+            -exec cp {} test-results/ \;
+
+          echo "Collected test reports:"
+          find test-results -type f -print
+
+      - name: Publish test results
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v3
+        with:
+          name: Maven Tests
+          path: test-results/*.xml
+          reporter: java-junit
+          list-suites: all
+          list-tests: all
+          max-annotations: 10
+          fail-on-error: true
+          fail-on-empty: true
+          only-summary: false
+          use-actions-summary: true
+          badge-title: tests
+          collapsed: auto
+
+      - name: Upload JUnit results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-test-results
+          path: test-results/
+          if-no-files-found: error
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: |
+            **/target/allure-results/
+          if-no-files-found: ignore

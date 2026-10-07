@@ -4,64 +4,117 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import ru.vych.http.impl.common.CookiesPolicies;
+import ru.vych.http.impl.entities.CookieEntry;
 
-import java.net.CookieHandler;
-import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Конфигурация http-клиента
+ * Конфигурация экземпляра HTTP-клиента.
+ * <p>
+ * Содержит все параметры, необходимые для создания и настройки клиента:
+ * корневой URL, тайм-ауты, дефолтные заголовки, параметры cookie, политику
+ * редиректов и версию протокола. Передаётся в {@link HttpClientBuilder} при
+ * создании клиента.
+ * </p>
+ *
+ * @see HttpClientBuilder#build(HttpClientConfig, ru.vych.logger.impl.LogService, java.util.List, java.util.List)
+ * @see ru.vych.http.impl.HttpClient
  */
 @Getter
 @Setter
 @Accessors(chain = true)
 @RequiredArgsConstructor
 public class HttpClientConfig {
+
     /**
-     * Сервис-код клиента
+     * Уникальный код клиента.
+     * Применяется в логировании для идентификации источника событий.
      */
     private final String serviceCode;
 
     /**
-     * Корневая точка для клиента.
-     * От неё будут производиться все запросы.
+     * Корневой URL (base URL) для данного клиента.
+     * <p>
+     * К этому URL добавляются пути из {@link ru.vych.http.impl.entities.Request},
+     * path-параметры и query-параметры при формировании полного URI запроса.
+     * </p>
+     * <p>По умолчанию — пустая строка (все запросы идут на корень).</p>
      */
     private String root = "";
 
     /**
-     * Тайм-аут запросов клиента
+     * Тайм-аут установления соединения и ожидания ответа.
+     * <p>
+     * Применяется как к соединению, так и к ожиданию ответа от сервера.
+     * </p>
+     * <p>По умолчанию — 15 секунд.</p>
      */
-    private Integer timeout = 15000;
+    private Duration timeout = Duration.ofSeconds(15);
 
     /**
-     * Заголовки, которые всегда добавляются к запросам клиента
+     * Дефолтные HTTP-заголовки, которые автоматически добавляются к каждому запросу.
+     * <p>
+     * Заголовки из этого мапа добавляются первыми; заголовки, установленные
+     * в {@link ru.vych.http.impl.entities.Request}, добавляются после.
+     * Если заголовок с таким же именем существует и в конфиге, и в запросе,
+     * оба значения отправляются (HTTP-заголовки могут иметь несколько значений).
+     * </p>
      */
     private Map<String, String> headers = new HashMap<>();
 
     /**
-     * Куки, которые всегда добавляются к запросам клиента
+     * Дефолтные cookie, которые добавляются в cookie-хранилище при инициализации клиента.
      */
-    private Map<String, String> cookies = new HashMap<>();
+    private List<CookieEntry> cookies = new ArrayList<>();
 
     /**
-     * Следует ли сохранять куки из полученных ответов
+     * Политика принятия cookie.
+     * <p>
+     * {@code ACCEPT_ALL} — принимать все cookie.
+     * {@code ACCEPT_NONE} — отклонять все cookie.
+     * {@code ACCEPT_ORIGINAL_SERVER} — принимать только cookie оригинального сервера.
+     * </p>
+     * <p>По умолчанию — {@link CookiesPolicies#ACCEPT_ALL}.</p>
+     *
+     * @see CookiePolicy
+     * @see CookiesPolicies
      */
-    private Boolean storeCookies = false;
+    private CookiesPolicies cookiePolicy = CookiesPolicies.ACCEPT_ALL;
 
     /**
-     * Какой обработчик кук будет использоваться клиентом
+     * Политика автоматического следования за редиректами (3xx статусы).
+     * <p>
+     * {@code NORMAL} — следует за редиректами с методами GET и HEAD, но не с POST.
+     * {@code ALWAYS} — следует за редиректами любого метода.
+     * {@code NEVER} — не следует за редиректами, возвращает исходный ответ.
+     * </p>
+     * <p>По умолчанию — {@link HttpClient.Redirect#NORMAL}.</p>
+     *
+     * @see HttpClient.Redirect
      */
-    private Class<? extends CookieHandler> cookieHandlerClass = CookieManager.class;
+    private HttpClient.Redirect redirectPolicy = HttpClient.Redirect.NORMAL;
 
     /**
-     * Следует ли переходить по полученным редиректам
-     */
-    private Boolean allowRedirects = false;
-
-    /**
-     * Версия протокола http, которая будет использовать там, где это возможно
+     * Версия HTTP-протокола, которая будет использоваться при отправке запросов.
+     * <p>По умолчанию — HTTP/1.1.</p>
+     *
+     * @see java.net.http.HttpClient.Version
      */
     private HttpClient.Version version = HttpClient.Version.HTTP_1_1;
+
+    /**
+     * Включает логирование запросов и ответов, отправляемых клиентом.
+     * <p>
+     * Если {@code true}, запросы и ответы логируются через {@code LogService}
+     * из {@code logger-spring-boot-starter}. По умолчанию логирование выключено.
+     * </p>
+     */
+    private boolean logRequests = true;
 }

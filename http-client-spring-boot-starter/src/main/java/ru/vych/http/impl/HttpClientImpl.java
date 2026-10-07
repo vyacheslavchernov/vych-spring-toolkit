@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import ru.vych.http.config.HttpClientConfig;
+import ru.vych.http.impl.common.CookiesPolicies;
 import ru.vych.http.impl.common.HttpStatus;
+import ru.vych.http.impl.entities.CookieEntry;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.entities.Response;
@@ -17,105 +19,163 @@ import ru.vych.http.impl.interceptors.RequestInterceptor;
 import ru.vych.http.impl.interceptors.ResponseInterceptor;
 import ru.vych.logger.impl.LogService;
 
-import java.lang.reflect.InvocationTargetException;
-import java.net.CookieHandler;
-import java.net.CookieManager;
 import java.net.HttpCookie;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
-import static java.net.http.HttpClient.Redirect.ALWAYS;
-import static java.net.http.HttpClient.Redirect.NEVER;
-import static java.time.temporal.ChronoUnit.MILLIS;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
 
 /**
- * Реализация http-клиента
+ * Полнофункциональная реализация {@link HttpClient} на базе стандартного
+ * {@code java.net.http.HttpClient} (Java 11+ HTTP Client API).
+ * <p>
+ * Поддерживает HTTP-методы GET и POST, пользовательские перехватчики запросов
+ * и ответов, автоматическую десериализацию JSON-ответов через Jackson,
+ * а также настройку cookie, редиректов и тайм-аутов через {@link HttpClientConfig}.
+ * </p>
+ * <p>
+ * <b>Изоляция cookie:</b> каждый экземпляр клиента имеет собственное хранилище cookies
+ * ({@code ConcurrentHashMap}), что обеспечивает полную изоляцию состояния между клиентами.
+ * Глобальный {@code CookieHandler} не используется.
+ * </p>
+ * <p>
+ * <b>Процесс выполнения запроса:</b>
+ * <ol>
+ *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
+ *   <li>Формируется URI из корневого URL конфига + путь запроса + path- и query-параметры.</li>
+ *   <li>Добавляются заголовки: сначала дефолтные из конфига, затем — из запроса, затем — cookies из внутреннего хранилища.</li>
+ *   <li>Для POST тело запроса сериализуется (String → строка, byte[] → байты, остальное → JSON через Jackson).</li>
+ *   <li>Запрос отправляется через {@code java.net.http.HttpClient}.</li>
+ *   <li>Ответ парсится: body десериализуется в {@link ru.vych.http.impl.entities.Request#getResponseClass()}, cookies сохраняются в хранилище.</li>
+ *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
+ * </ol>
+ * </p>
+ *
+ * @see HttpClient
+ * @see HttpClientConfig
+ * @see ru.vych.http.config.HttpClientBuilder
  */
 @Slf4j
 public class HttpClientImpl implements HttpClient {
+    private static final char[] HEX = "0123456789ABCDEF".toCharArray();
+
+    /**
+     * Уникальный идентификатор данного экземпляра клиента.
+     * Генерируется один раз при создании и используется в логировании.
+     */
     @Getter
     private final String clientUuid = UUID.randomUUID().toString();
     private final java.net.http.HttpClient client;
     private final ObjectMapper mapper = new ObjectMapper();
 
     private final HttpClientConfig config;
-    private final LogService logService;
+    private final HttpClientLogger httpClientLogger;
     private final List<RequestInterceptor> requestInterceptors = new ArrayList<>();
     private final List<ResponseInterceptor> responseInterceptors = new ArrayList<>();
 
+    /**
+     * Внутреннее хранилище cookies для данного экземпляра клиента.
+     * Ключ — хост (домен), значение — список {@link HttpCookie}.
+     * Полностью изолировано от других экземпляров {@code HttpClient}.
+     */
+    private final Map<String, List<HttpCookie>> cookieStore = new ConcurrentHashMap<>();
+    private final CookiesPolicies cookiePolicy;
+
+    /**
+     * Создаёт и настраивает экземпляр HTTP-клиента.
+     * <p>
+     * Инициализирует внутренний {@code java.net.http.HttpClient} с параметрами
+     * из конфига (тайм-аут, редиректы, версия протокола, cookie-хендлер).
+     * При {@code storeCookies = true} создаётся cookie-хранилище и инициализируется
+     * дефолтными cookie из {@link HttpClientConfig#getCookies()}.
+     * </p>
+     *
+     * @param config               конфигурация клиента; не должен быть {@code null}
+     * @param logService           сервис логирования; не должен быть {@code null}
+     * @param requestInterceptors  список перехватчиков запросов; может быть пустым
+     * @param responseInterceptors список перехватчиков ответов; может быть пустым
+     * @throws ru.vych.http.impl.exceptions.HttpClientConfigurationException если некорректная конфигурация
+     *                                                                       или ошибка создания cookie-хранилища
+     */
     public HttpClientImpl(
             HttpClientConfig config, LogService logService,
             List<RequestInterceptor> requestInterceptors, List<ResponseInterceptor> responseInterceptors
     ) throws HttpClientException {
+        if (config == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_NULL);
+        }
+        if (logService == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_LOG_SERVICE_IS_NULL);
+        }
+
+        if (config.getRoot() == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_ROOT_CANT_BE_NULL);
+        }
         this.config = config;
-        this.logService = logService;
-        this.requestInterceptors.addAll(requestInterceptors);
-        this.responseInterceptors.addAll(responseInterceptors);
+        this.httpClientLogger = new HttpClientLogger(config, logService);
+
+        if (requestInterceptors != null) {
+            this.requestInterceptors.addAll(requestInterceptors);
+        }
+        if (responseInterceptors != null) {
+            this.responseInterceptors.addAll(responseInterceptors);
+        }
 
         java.net.http.HttpClient.Builder clientBuilder;
         try {
             clientBuilder = java.net.http.HttpClient.newBuilder()
-                    .connectTimeout(Duration.of(config.getTimeout(), MILLIS))
-                    .followRedirects(config.getAllowRedirects() ? ALWAYS : NEVER)
+                    .connectTimeout(config.getTimeout())
+                    .followRedirects(config.getRedirectPolicy())
                     .version(config.getVersion());
-        } catch (IllegalArgumentException e) {
-            logService.error(
-                    config.getServiceCode(), clientUuid, "Ошибка инициализации клиента",
+        } catch (IllegalArgumentException | NullPointerException e) {
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, CREATION_ERROR_CONFIGURATION_IS_INCORRECT,
                     config, e.toString()
             );
-            throw new HttpClientConfigurationException("Некорректная конфигурация http-клиента", e);
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT, e);
         }
 
-        // TODO: хендлер кук должен создаваться всегда. Управлять сохранением кук через CookiePolicy.
-        //  Добавлять куки из конфига клиента в хендлер при инициализации клиента.
-        if (config.getStoreCookies()) {
-            try {
-                clientBuilder.cookieHandler(config.getCookieHandlerClass().getConstructor().newInstance());
-            } catch (InstantiationException | NoSuchMethodException |
-                     InvocationTargetException | IllegalAccessException e) {
-                logService.error(
-                        config.getServiceCode(), clientUuid, "Ошибка инициализации клиента",
-                        config, e.toString()
-                );
-                throw new HttpClientConfigurationException("Не удалось создать экземпляр хранилища cookie", e);
-            }
+        if (config.getCookiePolicy() == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL);
+        }
+        cookiePolicy = config.getCookiePolicy();
+
+        if (config.getCookies() == null) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL);
+        }
+        for (CookieEntry cookie : config.getCookies()) {
+            String host = cookie.getUri().getHost();
+            cookieStore
+                    .computeIfAbsent(host, k -> new CopyOnWriteArrayList<>())
+                    .add(cookie.getCookie());
         }
 
         this.client = clientBuilder.build();
 
-        CookieManager cookies = (CookieManager) this.client.cookieHandler().orElse(null);
-        if (cookies != null) {
-            config.getCookies().forEach((key, value) ->
-                    cookies.getCookieStore().add(URI.create("*"), new HttpCookie(key, value))
-            );
-        }
-
-        logService.info(config.getServiceCode(), clientUuid, "Инициализирован Http-Client", config);
-    }
-
-    @Override
-    public CookieHandler getCookieHandler() {
-        return this.client.cookieHandler().orElse(null);
+        httpClientLogger.info(
+                true, config.getServiceCode(), clientUuid,
+                "Инициализирован Http-Client", config
+        );
     }
 
     @Override
     public Response execute(Request request) throws HttpClientException {
         requestInterceptors.forEach(filter -> {
-            logService.debug(
+            httpClientLogger.debug(
                     config.getServiceCode(), request.getUuid(),
-                    "Выполнение фильтра запроса", filter.getClass().getCanonicalName()
+                    "Выполнение интерцептора запроса", filter.getClass().getCanonicalName()
             );
             filter.handle(this, request);
         });
-        logService.debug(config.getServiceCode(), request.getUuid(), "Отправка Http-запроса", request);
+        httpClientLogger.debug(config.getServiceCode(), request.getUuid(), "Отправка Http-запроса", request);
 
         Response response = switch (request.getMethod()) {
             case GET -> get(request);
@@ -123,17 +183,28 @@ public class HttpClientImpl implements HttpClient {
         };
 
         responseInterceptors.forEach(filter -> {
-            logService.debug(
+            httpClientLogger.debug(
                     config.getServiceCode(), request.getUuid(),
-                    "Выполнение фильтра ответа", filter.getClass().getCanonicalName()
+                    "Выполнение интерцептора ответа", filter.getClass().getCanonicalName()
             );
             filter.handle(this, response);
         });
-        logService.debug(config.getServiceCode(), request.getUuid(), "Получен ответ", response);
+        httpClientLogger.debug(config.getServiceCode(), request.getUuid(), "Получен ответ", response);
 
         return response;
     }
 
+    /**
+     * Выполняет HTTP GET-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * отправляет и десериализует ответ.
+     * </p>
+     *
+     * @param request запрос, содержащий путь и заголовки
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     */
     private Response get(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -143,15 +214,27 @@ public class HttpClientImpl implements HttpClient {
         try {
             rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
-            logService.error(
-                    config.getServiceCode(), clientUuid, "Ошибка при отправке запроса",
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
                     request, e.toString()
             );
-            throw new HttpClientExecuteRequestException("Ошибка при отправке запроса", e);
+            throw new HttpClientExecuteRequestException(REQUEST_ERROR_GENERIC, e);
         }
         return buildResponse(rs, request);
     }
 
+    /**
+     * Выполняет HTTP POST-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * сериализует тело запроса и отправляет. Результат десериализуется.
+     * </p>
+     *
+     * @param request запрос, содержащий путь, заголовки и тело
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
+     */
     private Response post(Request request) throws HttpClientException {
         Builder requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -161,14 +244,30 @@ public class HttpClientImpl implements HttpClient {
         try {
             rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
-            logService.error(
-                    config.getServiceCode(), clientUuid, "Ошибка при отправке запроса",
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
                     request, e.toString());
-            throw new HttpClientExecuteRequestException("Ошибка при отправке запроса", e);
+            throw new HttpClientExecuteRequestException(REQUEST_ERROR_GENERIC, e);
         }
         return buildResponse(rs, request);
     }
 
+    /**
+     * Формирует {@link HttpRequest.BodyPublisher} из тела запроса.
+     * <p>
+     * Поддерживает четыре типа payload:
+     * <ul>
+     *   <li>{@code null} → пустое тело</li>
+     *   <li>{@code String} → отправляется как строка в UTF-8</li>
+     *   <li>{@code byte[]} → отправляется как байтовый массив</li>
+     *   <li>Любой другой объект → сериализуется в JSON через Jackson</li>
+     * </ul>
+     * </p>
+     *
+     * @param request запрос, содержащий тело
+     * @return {@link HttpRequest.BodyPublisher} для отправки тела
+     * @throws HttpClientHandleResponseException если не удалось сериализовать payload в JSON
+     */
     private HttpRequest.BodyPublisher buildBody(Request request) throws HttpClientException {
         Object payload = request.getPayload();
 
@@ -191,42 +290,268 @@ public class HttpClientImpl implements HttpClient {
             );
 
         } catch (JsonProcessingException e) {
-            logService.error(
-                    config.getServiceCode(), clientUuid, "Ошибка при обработке тела запроса",
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_CANT_HANDLE_BODY,
                     payload, e.toString());
-            throw new HttpClientHandleResponseException("Ошибка при обработке тела запроса", e);
+            throw new HttpClientHandleResponseException(REQUEST_ERROR_CANT_HANDLE_BODY, e);
         }
     }
 
-    private URI buildUri(Request request) {
-        var root = config.getRoot().endsWith("/") ? config.getRoot() : config.getRoot() + "/";
+    /**
+     * Формирует полный URI для запроса.
+     * <p>
+     * Собирает URI из:
+     * <ol>
+     *   <li>Корневого URL из {@link HttpClientConfig#getRoot()}.</li>
+     *   <li>Пути из {@link ru.vych.http.impl.entities.Request#getUrl()}.</li>
+     *   <li>Path-параметров из {@link ru.vych.http.impl.entities.Request#getPathParams()} — вставляются как части пути.</li>
+     *   <li>Query-параметров из {@link ru.vych.http.impl.entities.Request#getQueryParams()} — форматируются как {@code key=value&...}.</li>
+     * </ol>
+     * </p>
+     *
+     * @param request запрос, содержащий путь и параметры
+     * @return полный URI для HTTP-запроса
+     */
+    protected URI buildUri(Request request) {
+        var root = config.getRoot().endsWith("/")
+                ? config.getRoot()
+                : config.getRoot() + "/";
 
-        var path = request.getUrl().startsWith("/") ? request.getUrl().substring(1) : request.getUrl();
-        var pathParams = String.join("/", request.getPathParams());
+        var path = request.getUrl().startsWith("/")
+                ? request.getUrl().substring(1)
+                : request.getUrl();
+
+        var pathParams = request.getPathParams().stream()
+                .map(this::encodePathSegment)
+                .collect(Collectors.joining("/"));
 
         var queryParams = request.getQueryParams().entrySet()
                 .stream()
-                .map(e -> e.getKey() + "=" + e.getValue())
+                .map(entry -> encodeQueryComponent(entry.getKey())
+                        + "="
+                        + encodeQueryComponent(entry.getValue()))
                 .collect(Collectors.joining("&"));
 
-        var fullPathBuilder = new StringBuilder(root);
-        fullPathBuilder.append(path);
+        var uri = new StringBuilder()
+                .append(encodeRoot(root))
+                .append(encodePath(path));
+
         if (!pathParams.isEmpty()) {
-            fullPathBuilder.append("/");
-            fullPathBuilder.append(pathParams);
+            uri.append("/")
+                    .append(pathParams);
         }
+
         if (!queryParams.isEmpty()) {
-            fullPathBuilder.append("?");
-            fullPathBuilder.append(queryParams);
+            uri.append("?")
+                    .append(queryParams);
         }
-        return URI.create(fullPathBuilder.toString());
+
+        return URI.create(uri.toString());
     }
 
+    /**
+     * Кодирует корневой URL URI.
+     * <p>
+     * Разрешённые символы: {@code :} и {@code /}.
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodeRoot(String value) {
+        return encodeUri(value, c -> c == ':' || c == '/');
+    }
+
+    /**
+     * Кодирует путь URI.
+     * <p>
+     * Разрешённые символы: {@code /}.
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodePath(String value) {
+        return encodeUri(value, c -> c == '/');
+    }
+
+    /**
+     * Кодирует сегмент пути (path segment).
+     * <p>
+     * Разрешённые символы: none (все запрещённые символы кодируются).
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodePathSegment(String value) {
+        return encodeUri(value, c -> false);
+    }
+
+    /**
+     * Кодирует компонент query-строки.
+     * <p>
+     * Разрешённые символы: none (все запрещённые символы кодируются).
+     * </p>
+     *
+     * @param value исходное строковое значение
+     * @return закодированная строка
+     */
+    private String encodeQueryComponent(String value) {
+        return encodeUri(value, c -> false);
+    }
+
+    /**
+     * Универсальное кодирование URI-компонента.
+     * <p>
+     * Кодирует строку в percent-encoding (RFC 3986), сохраняя
+     * уже закодированные последовательности (например {@code %20}).
+     * Символы, которые являются допустимыми в URI без кодирования
+     * (unreserved: A-Z, a-z, 0-9, -, ., _, ~), а также символы,
+     * разрешённые через {@code allowed}, не кодируются.
+     * </p>
+     *
+     * @param value   исходная строка; может быть {@code null}
+     * @param allowed предикат, определяющий дополнительные разрешённые символы
+     * @return закодированная строка; пустая строка если {@code value == null}
+     */
+    private String encodeUri(String value, IntPredicate allowed) {
+        if (value == null) {
+            return "";
+        }
+        var bytes = value.getBytes(StandardCharsets.UTF_8);
+        var result = new StringBuilder(bytes.length);
+
+        for (int i = 0; i < bytes.length; i++) {
+            var c = bytes[i] & 0xFF;
+
+            // Сохраняем уже существующий percent-encoding.
+            // Например: %20, %D0%90, %2F.
+            if (c == '%'
+                    && i + 2 < bytes.length
+                    && isHex(bytes[i + 1])
+                    && isHex(bytes[i + 2])) {
+
+                result.append('%')
+                        .append((char) (bytes[i + 1] & 0xFF))
+                        .append((char) (bytes[i + 2] & 0xFF));
+
+                i += 2;
+                continue;
+            }
+
+            if (isUnreserved(c) || allowed.test(c)) {
+                result.append((char) c);
+            } else {
+                result.append('%')
+                        .append(HEX[c >> 4])
+                        .append(HEX[c & 0x0F]);
+            }
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * Проверяет, является ли символ допустимым в URI без кодирования.
+     * <p>
+     * Согласно RFC 3986, unreserved characters — это:
+     * {@code A-Z a-z 0-9 - . _ ~}.
+     * </p>
+     *
+     * @param c код символа
+     * @return {@code true}, если символ является unreserved
+     */
+    private boolean isUnreserved(int c) {
+        return c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9'
+                || c == '-'
+                || c == '.'
+                || c == '_'
+                || c == '~';
+    }
+
+    /**
+     * Проверяет, является ли байт шестнадцатеричной цифрой.
+     * <p>
+     * Поддерживаются цифры {@code 0-9}, буквы {@code A-F} и {@code a-f}.
+     * </p>
+     *
+     * @param value проверяемый байт
+     * @return {@code true}, если байт является шестнадцатеричной цифрой
+     */
+    private boolean isHex(byte value) {
+        var c = value & 0xFF;
+
+        return c >= '0' && c <= '9'
+                || c >= 'A' && c <= 'F'
+                || c >= 'a' && c <= 'f';
+    }
+
+    /**
+     * Добавляет HTTP-заголовки к builder'у запроса.
+     * <p>
+     * Сначала добавляются заголовки из {@link HttpClientConfig#getHeaders()},
+     * затем — заголовки из {@link ru.vych.http.impl.entities.Request#getHeaders()}.
+     * Если заголовок с таким же именем уже существует, новое значение добавляется
+     * к существующему (HTTP-заголовки могут иметь несколько значений).
+     * </p>
+     *
+     * @param builder builder для {@link HttpRequest}
+     * @param request запрос, содержащий дополнительные заголовки
+     */
     private void addHeaders(Builder builder, Request request) {
         config.getHeaders().forEach(builder::header);
         request.getHeaders().forEach(header -> builder.header(header.name(), header.value()));
+
+        // Добавляем cookies для текущего URI
+        URI uri = buildUri(request);
+        addCookiesToRequest(builder, uri);
     }
 
+    /**
+     * Добавляет cookies в заголовок {@code Cookie} для указанного URI.
+     * <p>
+     * Отправляются только cookies, чей хост совпадает с хостом целевого URI.
+     * </p>
+     *
+     * @param builder builder для {@link HttpRequest}
+     * @param uri     целевой URI
+     */
+    private void addCookiesToRequest(Builder builder, URI uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            return;
+        }
+
+        List<HttpCookie> cookies = cookieStore.getOrDefault(host, Collections.emptyList());
+
+        if (!cookies.isEmpty()) {
+            String cookieHeader = cookies.stream()
+                    .map(cookie -> cookie.getName() + "=" + cookie.getValue())
+                    .collect(Collectors.joining("; "));
+            if (!cookieHeader.isEmpty()) {
+                builder.header("Cookie", cookieHeader);
+            }
+        }
+    }
+
+    /**
+     * Десериализует тело ответа в указанный класс.
+     * <p>
+     * <ul>
+     *   <li>{@code String.class} → возвращает тело как строку</li>
+     *   <li>{@code null}, {@code byte.class}, {@code byte[].class} → возвращает {@code null}</li>
+     *   <li>Любой другой класс → десериализует JSON через Jackson</li>
+     * </ul>
+     * </p>
+     *
+     * @param body          тело ответа в виде строки
+     * @param responseClass целевой класс для десериализации
+     * @return десериализованный объект или {@code null}
+     * @throws HttpClientHandleResponseException если не удалось десериализовать JSON
+     */
     private Object mapBodyToResponseClass(String body, Class<?> responseClass) throws HttpClientException {
         if (responseClass == String.class) {
             return body;
@@ -239,16 +564,34 @@ public class HttpClientImpl implements HttpClient {
         try {
             return mapper.readValue(body, responseClass);
         } catch (JsonProcessingException e) {
-            logService.error(
-                    config.getServiceCode(), clientUuid, "Ошибка при обработке ответа",
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, RESPONSE_ERROR_CANT_DESERIALIZE_BODY,
                     body, responseClass, e.toString());
-            throw new HttpClientHandleResponseException("Ошибка при обработке ответа", e);
+            throw new HttpClientHandleResponseException(RESPONSE_ERROR_CANT_DESERIALIZE_BODY, e);
         }
     }
 
-    private Response buildResponse(HttpResponse<byte[]> httpResponse, Request request) throws HttpClientException {
+    /**
+     * Формирует {@link Response} из сырого {@link HttpResponse}.
+     * <p>
+     * Декодирует тело в UTF-8, извлекает статус-код и заголовки.
+     * Если статус OK и указан {@code responseClass} — десериализует body в этот класс.
+     * В противном случае body хранится как raw-строка.
+     * </p>
+     *
+     * @param httpResponse сырой HTTP-ответ от {@code java.net.http.HttpClient}
+     * @param request      исходный запрос, содержащий {@code responseClass}
+     * @return сконструированный {@link Response}
+     * @throws ru.vych.http.impl.exceptions.HttpClientHandleResponseException если не удалось десериализовать body
+     */
+    protected Response buildResponse(HttpResponse<byte[]> httpResponse, Request request) throws HttpClientException {
         String bodyText = new String(httpResponse.body(), StandardCharsets.UTF_8);
         var rsType = request.getResponseClass();
+
+        // Сохраняем cookies из ответа
+        URI uri = buildUri(request);
+        parseSetCookiesFromResponse(httpResponse, uri);
+
         return new Response(
                 request.getUuid(),
                 request,
@@ -257,14 +600,90 @@ public class HttpClientImpl implements HttpClient {
                 httpResponse.statusCode() != HttpStatus.OK || rsType != null && rsType != byte.class && rsType != byte[].class
                         ? bodyText
                         : null,
-                httpResponse.statusCode() != HttpStatus.OK
-                        ? null
-                        : mapBodyToResponseClass(bodyText, request.getResponseClass()),
+                mapBodyToResponseClass(bodyText, request.getResponseClass()),
                 extractHeaders(httpResponse)
         );
     }
 
-    private List<Header> extractHeaders(HttpResponse<byte[]> httpResponse) {
+    @Override
+    public List<HttpCookie> getCookies(String host) {
+        List<HttpCookie> cookies = cookieStore.get(host);
+        return cookies != null ? List.copyOf(cookies) : Collections.emptyList();
+    }
+
+    @Override
+    public void clearCookies(String host) {
+        cookieStore.remove(host);
+    }
+
+    @Override
+    public Map<String, List<HttpCookie>> getAllCookies() {
+        Map<String, List<HttpCookie>> result = new HashMap<>();
+        cookieStore.forEach((host, cookies) -> result.put(host, List.copyOf(cookies)));
+        return Collections.unmodifiableMap(result);
+    }
+
+    /**
+     * Парсит заголовок {@code Set-Cookie} из HTTP-ответа и сохраняет cookies
+     * во внутреннее хранилище с учётом {@link CookiesPolicies}.
+     * <p>
+     * Если политика {@link CookiesPolicies#ACCEPT_ALL} — все cookies принимаются.
+     * Если {@link CookiesPolicies#ACCEPT_NONE} — cookies игнорируются.
+     * Если {@link CookiesPolicies#ACCEPT_ORIGINAL_SERVER} — cookies принимаются
+     * только если хост ответа совпадает с корневым URL клиента.
+     * </p>
+     *
+     * @param httpResponse HTTP-ответ
+     * @param uri          URI ответа (для определения хоста)
+     */
+    private void parseSetCookiesFromResponse(HttpResponse<?> httpResponse, URI uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            return;
+        }
+
+        // Проверяем политику
+        if (cookiePolicy == CookiesPolicies.ACCEPT_NONE) {
+            return;
+        }
+
+        // ACCEPT_ORIGINAL_SERVER — проверяем, что хост совпадает с корнем клиента
+        if (cookiePolicy == CookiesPolicies.ACCEPT_ORIGINAL_SERVER) {
+            String rootHost = config.getRoot().replaceAll("^https?://", "").split("/")[0];
+            // rootHost может быть "localhost:9090" или просто "localhost"
+            // host — это просто "localhost" (без порта)
+            String rootHostWithoutPort = rootHost.split(":")[0];
+            if (!host.equals(rootHostWithoutPort)) {
+                return;
+            }
+        }
+
+        // Парсим Set-Cookie заголовки
+        List<String> setCookieHeaders = httpResponse.headers()
+                .map()
+                .getOrDefault("set-cookie", Collections.emptyList());
+
+        for (String setCookieHeader : setCookieHeaders) {
+            List<HttpCookie> cookies = HttpCookie.parse(setCookieHeader);
+            for (HttpCookie cookie : cookies) {
+                cookieStore
+                        .computeIfAbsent(host, k -> new CopyOnWriteArrayList<>())
+                        .add(cookie);
+            }
+        }
+    }
+
+    /**
+     * Извлекает все заголовки из HTTP-ответа.
+     * <p>
+     * Каждый pair (имя, значение) преобразуется в отдельный {@link Header}.
+     * Если заголовок имеет несколько значений, для каждого создаётся отдельный {@link Header}.
+     * </p>
+     *
+     * @param httpResponse HTTP-ответ
+     * @return список всех заголовков ответа
+     */
+    protected List<Header> extractHeaders(HttpResponse<byte[]> httpResponse) {
         List<Header> headers = new ArrayList<>();
         httpResponse.headers().map().forEach((name, values) -> {
             values.forEach(value -> {
