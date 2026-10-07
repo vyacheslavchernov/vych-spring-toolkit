@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.vych.App;
-import ru.vych.http.config.TestServerHttpClientConfiguration;
 import ru.vych.http.impl.HttpClient;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
@@ -16,12 +15,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static ru.vych.http.config.TestServerDefaultClientConfiguration.DEFAULT_CLIENT_SERVICE_CODE;
 
 @SpringBootTest(classes = App.class)
 public abstract class BaseHttpTest {
     @Autowired
-    @Qualifier(TestServerHttpClientConfiguration.SERVICE_CODE)
-    protected HttpClient httpClient;
+    @Qualifier(DEFAULT_CLIENT_SERVICE_CODE)
+    protected HttpClient defaultClient;
 
     @Step("Проверка статус-кода ответа")
     protected void checkResponseStatus(Response response, Integer... expected) {
@@ -30,7 +30,12 @@ public abstract class BaseHttpTest {
 
     @Step("Отправка запроса")
     protected Response sendRequest(Request request) throws HttpClientException {
-        return httpClient.execute(request);
+        return defaultClient.execute(request);
+    }
+
+    @Step("Отправка запроса через указанный клиент")
+    protected Response sendRequest(Request request, HttpClient client) throws HttpClientException {
+        return client.execute(request);
     }
 
     @Step("Проверяем, что тело ответа содержит только ожидаемое значение")
