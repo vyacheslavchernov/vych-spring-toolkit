@@ -15,8 +15,9 @@ Spring Boot starter для HTTP-клиента с поддержкой GET/POST,
 
 - [`config`](../packages/http/config.md) — автоконфигурация Spring, `HttpClientBuilder`, `HttpClientConfig`
 - [`impl`](../packages/http/impl.md) — основные реализации: `HttpClient`, `HttpClientImpl`, `HttpClientLogger`
+- [`impl/storage`](../packages/http/impl/storage.md) — `CookieFileStorage` для persistent cookie storage
 - [`impl/common`](../packages/http/impl/common.md) — enum'ы (`HttpMethod`, `CookiesPolicies`), константы статуса и media-type
-- [`impl/entities`](../packages/http/impl/entities.md) — сущности: `Request`, `Response`, `CookieEntry`, `Header`
+- [`impl/entities`](../packages/http/impl/entities.md) — сущности: `Request`, `Response`, `CookieEntry`, `Header`, `SerializedCookie`
 - [`impl/exceptions`](../packages/http/impl/exceptions.md) — checked-исключения: `HttpClientException` + 4 сабкласса
 - [`impl/interceptors`](../packages/http/impl/interceptors.md) — функциональные интерфейсы интерсепторов
 
@@ -27,9 +28,11 @@ Spring Boot starter для HTTP-клиента с поддержкой GET/POST,
 
 ## Тесты
 
-Юнит-тесты (6 классов) в `http-client-spring-boot-starter/src/test/`:
+Юнит-тесты (8 классов) в `http-client-spring-boot-starter/src/test/`:
 - `HttpClientImplTests` — создание клиента, GET/POST, десериализация, построение URI
 - `HttpClientCookieStoreTests` — cookie storage, isolation, policies
+- `HttpClientPersistentCookieTests` — persistent cookie storage интеграция
+- `CookieFileStorageTests` — файловое хранилище: save/load, TTL-фильтрация, атомарная запись
 - `HttpClientLoggerTests` — logging behavior (info/debug/error with logRequests)
 - `RequestBuilderTests` — request validation, builder pattern
 - `ResponseTests` — response body casting

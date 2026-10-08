@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: package
 ---
 
@@ -21,7 +21,7 @@ scope: package
 
 **Логирование:** через `HttpClientLogger` (обёртка над `LogService`).
 
-**Особенности:** собственное `ConcurrentHashMap` cookie-хранилище (не глобальный `CookieHandler`). Порядок хедеров: config → request → cookies.
+**Особенности:** собственное `ConcurrentHashMap` cookie-хранилище (не глобальный `CookieHandler`). Порядок хедеров: config → request → cookies. **Persistent storage:** cookies сохраняются в JSON-файл при изменении (async auto-save), восстанавливаются при создании клиента. TTL-фильтрация для cookies с `maxAge > 0`. Финальное сохранение при shutdown через shutdown hook. Атомарная запись (tmp file + rename).
 
 ### `HttpClientLogger`
 
@@ -35,6 +35,10 @@ scope: package
 
 - `HttpClientImpl` → `HttpClientLogger`, `Request.Builder`, `Response`, `HttpClientConfig`, `ObjectMapper`
 - `HttpClientLogger` → `LogService` (из logger-модуля)
+
+## Подпакеты
+
+- [`storage`](./impl/storage.md) — `CookieFileStorage` для persistent cookie storage
 
 ## Связанные пакеты
 

@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: package
 ---
 
@@ -13,7 +13,7 @@ scope: package
 
 Контейнер конфигурации HTTP-клиента: root URL, таймауты, дефолтные хедеры, cookie, политика редиректов и версии протокола.
 
-**Ключевые поля:** `serviceCode`, `root`, `timeout` (15s default), `headers`, `cookies`, `cookiePolicy`, `redirectPolicy`, `version` (HTTP/1.1 default), `logRequests` (true default).
+**Ключевые поля:** `serviceCode`, `root`, `timeout` (15s default), `headers`, `cookies`, `cookiePolicy`, `redirectPolicy`, `version` (HTTP/1.1 default), `logRequests` (true default), `cookieStorageDir` (default: `~/.config/vych-spring-toolkit/cookies/`), `cookieStorageEnabled` (true default).
 
 **Lombok:** `@Getter @Setter @Accessors(chain = true) @RequiredArgsConstructor` — `serviceCode` — единственный `final`-параметр конструктора.
 

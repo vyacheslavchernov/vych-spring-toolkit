@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: package
 ---
 
@@ -42,6 +42,16 @@ DTO для хранения пары `URI` + `HttpCookie`. Использует�
 HTTP-заголовок — пара «имя → значение». Используется как элемент `List<Header>` в `Request` и `Response`.
 
 **Компоненты:** `name` (String), `value` (String). Record自带 `equals`/`hashCode`/`toString`.
+
+### `SerializedCookie`
+
+DTO для JSON-сериализации HTTP-cookie в persistent storage. Хранит атрибуты cookie плюс `createdAt` для TTL-валидации.
+
+**Поля:** `name`, `value`, `domain`, `path`, `secure`, `httpOnly`, `maxAge`, `createdAt`.
+
+**Методы:** `fromHttpCookie(HttpCookie)` — создание из `HttpCookie`; `toHttpCookie()` — восстановление; `hasTtl()` — проверка наличия TTL; `isNotExpired()` — проверка TTL.
+
+**Lombok:** не используется, `@JsonCreator` + `@JsonProperty` для Jackson.
 
 ## Зависимости
 
