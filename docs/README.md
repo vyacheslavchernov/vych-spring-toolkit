@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: architecture
 ---
 
@@ -22,6 +22,7 @@ scope: architecture
 - [guidelines/commit-guidelines.md](guidelines/commit-guidelines.md) — конвенции оформления коммитов
 - [guidelines/agent-documentation-guidelines.md](guidelines/agent-documentation-guidelines.md) — правила создания и поддержки документации для AI-агентов
 - [guidelines/specifications-guidelines.md](guidelines/specifications-guidelines.md) — правила написания спецификаций
+- [guidelines/implementation-guideline.md](guidelines/implementation-guideline.md) — правила реализации спецификаций
 
 ### Модули
 - [modules/README.md](modules/README.md) — обзор всех модулей

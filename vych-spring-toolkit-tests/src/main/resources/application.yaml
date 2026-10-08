@@ -4,4 +4,9 @@ logger:
     enableColors: true
     includeEntities: true
     prettyEntities: true
-    dimEntities: true
+  file:
+    level: DEBUG
+    enabled: true
+    dir: ./app-logs
+    includeEntities: true
+    prettyEntities: false

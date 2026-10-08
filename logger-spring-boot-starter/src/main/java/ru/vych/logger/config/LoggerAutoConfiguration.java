@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import ru.vych.logger.impl.LogFilter;
 import ru.vych.logger.impl.LogService;
 import ru.vych.logger.impl.appenders.ConsoleAppender;
+import ru.vych.logger.impl.appenders.FileAppender;
 import ru.vych.logger.impl.appenders.LogAppender;
 
 import java.util.List;
@@ -15,15 +16,16 @@ import java.util.List;
 /**
  * Автоматическая конфигурация модуля логирования Spring Boot.
  *
- * <p>Регистрирует основные бины: {@link ru.vych.logger.impl.LogService} и
- * {@code ConsoleAppender} (при условии включённой конфигурации).
+ * <p>Регистрирует основные бины: {@link ru.vych.logger.impl.LogService},
+ * {@code ConsoleAppender} и {@link FileAppender} (при условии включённой конфигурации).
  *
  * @see LogProperties
  * @see ru.vych.logger.impl.LogService
  * @see ru.vych.logger.impl.appenders.ConsoleAppender
+ * @see FileAppender
  */
 @AutoConfiguration
-@EnableConfigurationProperties(LogProperties.class)
+@EnableConfigurationProperties({LogProperties.class, FileAppenderProperties.class})
 public class LoggerAutoConfiguration {
     /**
      * Создаёт главный сервис логирования.
@@ -62,5 +64,35 @@ public class LoggerAutoConfiguration {
                 properties.getConsole().isEnableColors(),
                 properties.getConsole().isDimEntities()
         );
+    }
+
+    /**
+     * Создаёт аппендер для записи логов в файл.
+     *
+     * <p>Активирован только при явном включении через свойство {@code logger.file.enabled=true}.
+     * Создаёт и инициализирует {@link FileAppender} через {@link FileAppenderProvider}.
+     * При ошибке инициализации аппендер не создаётся, bean не регистрируется, приложение продолжает работу.
+     *
+     * @param properties настройки файлового аппендера из application.yaml
+     * @return настроенный и инициализированный экземпляр {@link FileAppender}, или {@code null} при ошибке
+     */
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "logger.file",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public LogAppender fileAppender(FileAppenderProperties properties) {
+        try {
+            var provider = new FileAppenderProvider(properties);
+            return provider.create();
+        } catch (ru.vych.logger.impl.exceptions.LoggerAppenderException e) {
+            System.err.println("[FileAppender] Не удалось создать аппендер: " + e.getMessage());
+            return null;
+        } catch (IllegalArgumentException e) {
+            // Неверный паттерн даты (validate() бросает IllegalArgumentException)
+            System.err.println("[FileAppender] Неверный паттерн даты: " + e.getMessage());
+            return null;
+        }
     }
 }

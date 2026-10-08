@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-10-08
-scope: architecture
+last_updated: 2026-10-09
+scope: guideline
 ---
 
 # Agent Documentation Guidelines

@@ -3,7 +3,6 @@ package ru.vych.http.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.common.CookiesPolicies;
 import ru.vych.http.impl.common.HttpStatus;
@@ -63,7 +62,6 @@ import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
  * @see HttpClientConfig
  * @see ru.vych.http.config.HttpClientBuilder
  */
-@Slf4j
 public class HttpClientImpl implements HttpClient {
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
 
