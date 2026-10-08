@@ -186,10 +186,31 @@ List<Header> headers = response.getHeaders();
 | `redirectPolicy` | `HttpClient.Redirect` | `NORMAL`              | Политика автоматического следования за редиректами (3xx статусы) |
 | `version` | `HttpClient.Version` | `HTTP_1_1`            | Версия HTTP-протокола |
 | `logRequests` | `boolean` | `true`                | Логировать запросы и ответы через logger-spring-boot-starter |
+| `cookieStorageDir` | `Path` | `~/.config/vych-spring-toolkit/cookies/` | Каталог для persistent cookie-файлов |
+| `cookieStorageEnabled` | `boolean` | `true` | Включить persistent storage cookies (сохранение/восстановление между запусками) |
 
 ## Управление cookie
 
 Каждый экземпляр HTTP-клиента имеет **полностью изолированное** хранилище cookies — глобальный `CookieHandler` не используется. Cookies автоматически сохраняются из заголовков `Set-Cookie` ответов и отправляются в запросах к соответствующим хостам.
+
+### Persistent storage
+
+При включённом persistent storage (`cookieStorageEnabled = true`) cookies сохраняются в JSON-файл и восстанавливаются при создании клиента:
+
+- **Формат файла:** `<cookieStorageDir>/<serviceCode>-<hostname>.cookies`
+- **Автосохранение:** асинхронно после каждого изменения cookie-хранилища
+- **Финальное сохранение:** синхронно при shutdown приложения
+- **Атомарная запись:** временный файл + rename
+- **TTL-фильтрация:** cookies с `maxAge > 0` сохраняются с timestamp создания; при загрузке истёкшие cookies отфильтровываются
+- **Session cookies** (без `maxAge`/`expires`) не сохраняются в файл
+
+Пример отключения persistent storage:
+
+```java
+HttpClientConfig config = new HttpClientConfig("MyService")
+        .setRoot("https://api.example.com")
+        .setCookieStorageEnabled(false);
+```
 
 ### Получение cookies
 

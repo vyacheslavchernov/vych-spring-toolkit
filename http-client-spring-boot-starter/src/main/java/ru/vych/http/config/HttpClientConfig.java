@@ -9,6 +9,7 @@ import ru.vych.http.impl.entities.CookieEntry;
 
 import java.net.CookiePolicy;
 import java.net.http.HttpClient;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,4 +118,23 @@ public class HttpClientConfig {
      * </p>
      */
     private boolean logRequests = true;
+
+    /**
+     * Каталог для persistent cookie-файлов.
+     * <p>
+     * Cookie-файлы сохраняются как {@code &lt;cookieStorageDir&gt;/&lt;serviceCode&gt;-&lt;hostname&gt;.cookies}.
+     * По умолчанию — {@code ~/.config/vych-spring-toolkit/cookies/}.
+     * </p>
+     */
+    private Path cookieStorageDir = Path.of(System.getProperty("user.home"), ".config", "vych-spring-toolkit", "cookies");
+
+    /**
+     * Включает persistent storage cookies.
+     * <p>
+     * Если {@code true}, cookies сохраняются в файл при изменении и восстанавливаются
+     * при создании клиента. Если {@code false}, используется только memory storage.
+     * </p>
+     * <p>По умолчанию — {@code true}.</p>
+     */
+    private boolean cookieStorageEnabled = true;
 }

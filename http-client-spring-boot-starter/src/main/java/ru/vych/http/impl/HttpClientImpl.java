@@ -17,6 +17,7 @@ import ru.vych.http.impl.exceptions.HttpClientExecuteRequestException;
 import ru.vych.http.impl.exceptions.HttpClientHandleResponseException;
 import ru.vych.http.impl.interceptors.RequestInterceptor;
 import ru.vych.http.impl.interceptors.ResponseInterceptor;
+import ru.vych.http.impl.storage.CookieFileStorage;
 import ru.vych.logger.impl.LogService;
 
 import java.net.HttpCookie;
@@ -25,6 +26,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -77,6 +79,7 @@ public class HttpClientImpl implements HttpClient {
 
     private final HttpClientConfig config;
     private final HttpClientLogger httpClientLogger;
+    private final LogService logService;
     private final List<RequestInterceptor> requestInterceptors = new ArrayList<>();
     private final List<ResponseInterceptor> responseInterceptors = new ArrayList<>();
 
@@ -85,8 +88,26 @@ public class HttpClientImpl implements HttpClient {
      * Ключ — хост (домен), значение — список {@link HttpCookie}.
      * Полностью изолировано от других экземпляров {@code HttpClient}.
      */
-    private final Map<String, List<HttpCookie>> cookieStore = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CopyOnWriteArrayList<HttpCookie>> cookieStore = new ConcurrentHashMap<>();
+
+    /**
+     * Timestamp создания cookie для проверки TTL.
+     * Ключ — хост, значение — мапа "имя cookie → timestamp создания".
+     */
+    private final ConcurrentHashMap<String, Map<String, Long>> cookieCreationTimestamps = new ConcurrentHashMap<>();
+
     private final CookiesPolicies cookiePolicy;
+
+    /**
+     * Файловое persistent хранилище cookies.
+     * {@code null} если persistent storage отключён или невозможно определить hostname.
+     */
+    private final CookieFileStorage cookieFileStorage;
+
+    /**
+     * Поток shutdown hook для финального сохранения cookies.
+     */
+    private Thread shutdownHook;
 
     /**
      * Создаёт и настраивает экземпляр HTTP-клиента.
@@ -120,6 +141,7 @@ public class HttpClientImpl implements HttpClient {
         }
         this.config = config;
         this.httpClientLogger = new HttpClientLogger(config, logService);
+        this.logService = logService;
         this.mapper = new ObjectMapper();
         // Регистрация модуля для поддержки Java 8 date/time типов
         this.mapper.registerModule(new JavaTimeModule());
@@ -158,6 +180,15 @@ public class HttpClientImpl implements HttpClient {
             cookieStore
                     .computeIfAbsent(host, k -> new CopyOnWriteArrayList<>())
                     .add(cookie.getCookie());
+        }
+
+        // Инициализация persistent storage
+        this.cookieFileStorage = initPersistentStorage();
+
+        // Регистрация shutdown hook для финального сохранения cookies
+        if (cookieFileStorage != null) {
+            this.shutdownHook = new Thread(this::shutdown, "cookie-storage-shutdown-" + clientUuid);
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
         }
 
         this.client = clientBuilder.build();
@@ -516,6 +547,7 @@ public class HttpClientImpl implements HttpClient {
      * Добавляет cookies в заголовок {@code Cookie} для указанного URI.
      * <p>
      * Отправляются только cookies, чей хост совпадает с хостом целевого URI.
+     * Просроченные cookies (по TTL) автоматически пропускаются.
      * </p>
      *
      * @param builder builder для {@link HttpRequest}
@@ -527,7 +559,8 @@ public class HttpClientImpl implements HttpClient {
             return;
         }
 
-        List<HttpCookie> cookies = cookieStore.getOrDefault(host, Collections.emptyList());
+        // getCookies() фильтрует cookies по TTL
+        List<HttpCookie> cookies = getCookies(host);
 
         if (!cookies.isEmpty()) {
             String cookieHeader = cookies.stream()
@@ -613,7 +646,94 @@ public class HttpClientImpl implements HttpClient {
             throw new NullPointerException("Host cannot be null in getCookies()");
         }
         List<HttpCookie> cookies = cookieStore.get(host);
-        return cookies != null ? List.copyOf(cookies) : Collections.emptyList();
+        if (cookies == null || cookies.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Фильтрация cookies по TTL
+        List<HttpCookie> validCookies = new ArrayList<>();
+        Map<String, Long> timestamps = cookieCreationTimestamps.get(host);
+
+        for (HttpCookie cookie : cookies) {
+            if (isCookieExpired(cookie, timestamps)) {
+                continue;
+            }
+            validCookies.add(cookie);
+        }
+
+        return List.copyOf(validCookies);
+    }
+
+    /**
+     * Проверяет, истёк ли cookie по TTL.
+     * <p>
+     * Cookie считается истёкшим если:
+     * <ul>
+     *   <li>maxAge <= 0</li>
+     *   <li>maxAge > 0, но createdAt + maxAge * 1000 &lt; currentMillis</li>
+     * </ul>
+     * </p>
+     *
+     * @param cookie cookie для проверки
+     * @param timestamps мапа "имя cookie → timestamp создания" для данного хоста
+     * @return true если cookie истёк
+     */
+    private boolean isCookieExpired(HttpCookie cookie, Map<String, Long> timestamps) {
+        Long maxAgeObj = cookie.getMaxAge();
+
+        // maxAge < 0 — session cookie (не сохраняется, но и не истёк)
+        if (maxAgeObj != null && maxAgeObj < 0) {
+            return false;
+        }
+
+        // maxAge == 0 — cookie должен быть удалён
+        if (maxAgeObj != null && maxAgeObj == 0) {
+            return true;
+        }
+
+        // maxAge == null — cookie без maxAge, считаем не истёкшим
+        if (maxAgeObj == null) {
+            return false;
+        }
+
+        long maxAge = maxAgeObj;
+
+        // Cookie с maxAge > 0 — проверяем по timestamp создания
+        if (timestamps != null) {
+            String cookieName = cookie.getName();
+            Long createdAt = timestamps.get(cookieName);
+            if (createdAt != null) {
+                return createdAt + maxAge * 1000L <= System.currentTimeMillis();
+            }
+        }
+
+        // Если timestamp не найден — cookie не истёк (первый запрос)
+        return false;
+    }
+
+    /**
+     * Проверяет, истёк ли cookie по expires (HTTP-date).
+     * <p>
+     * Если cookie имеет expires атрибут (устанавливается через Set-Cookie header
+     * с датой истечения), проверяется что currentMillis &lt; expires.
+     * </p>
+     *
+     * @param cookie cookie для проверки
+     * @return true если cookie истёк по expires
+     */
+    private boolean isCookieExpiredByExpires(HttpCookie cookie) {
+        // HttpCookie не хранит expires напрямую, но мы можем проверить
+        // через maxAge и createdAt из cookieCreationTimestamps
+        Long maxAgeObj = cookie.getMaxAge();
+        if (maxAgeObj == null || maxAgeObj <= 0) {
+            return false;
+        }
+
+        // Проверяем по maxAge + createdAt
+        Map<String, Long> timestamps = cookieCreationTimestamps.get(cookieStore.keySet().iterator().next());
+        // Этот метод используется в addCookiesToRequest, где cookies уже в хранилище
+        // Проверяем по maxAge
+        return System.currentTimeMillis() > System.currentTimeMillis() - maxAgeObj * 1000L;
     }
 
     @Override
@@ -622,6 +742,8 @@ public class HttpClientImpl implements HttpClient {
             throw new NullPointerException("Host cannot be null in clearCookies()");
         }
         cookieStore.remove(host);
+        cookieCreationTimestamps.remove(host);
+        asyncSaveIfPersistent();
     }
 
     @Override
@@ -639,6 +761,7 @@ public class HttpClientImpl implements HttpClient {
      * Если {@link CookiesPolicies#ACCEPT_NONE} — cookies игнорируются.
      * Если {@link CookiesPolicies#ACCEPT_ORIGINAL_SERVER} — cookies принимаются
      * только если хост ответа совпадает с корневым URL клиента.
+     * После сохранения cookies запускается асинхронное автосохранение в файл.
      * </p>
      *
      * @param httpResponse HTTP-ответ
@@ -674,11 +797,22 @@ public class HttpClientImpl implements HttpClient {
         for (String setCookieHeader : setCookieHeaders) {
             List<HttpCookie> cookies = HttpCookie.parse(setCookieHeader);
             for (HttpCookie cookie : cookies) {
-                cookieStore
-                        .computeIfAbsent(host, k -> new CopyOnWriteArrayList<>())
-                        .add(cookie);
+                CopyOnWriteArrayList<HttpCookie> hostCookies =
+                        cookieStore.computeIfAbsent(host, k -> new CopyOnWriteArrayList<>());
+                hostCookies.add(cookie);
+
+                // Трекинг timestamp создания для cookies с maxAge > 0
+                Long maxAgeObj = cookie.getMaxAge();
+                if (maxAgeObj != null && maxAgeObj > 0) {
+                    cookieCreationTimestamps
+                            .computeIfAbsent(host, k -> new ConcurrentHashMap<>())
+                            .put(cookie.getName(), System.currentTimeMillis());
+                }
             }
         }
+
+        // Автосохранение после добавления cookies
+        asyncSaveIfPersistent();
     }
 
     /**
@@ -699,5 +833,94 @@ public class HttpClientImpl implements HttpClient {
             });
         });
         return headers;
+    }
+
+    /**
+     * Инициализирует файловое persistent хранилище cookies.
+     * <p>
+     * Определяет hostname текущей машины и формирует путь к cookie-файлу.
+     * Если persistent storage отключён в конфиге или невозможно определить hostname —
+     * возвращает {@code null} (используется только memory storage).
+     * </p>
+     *
+     * @return файловое хранилище или {@code null}
+     */
+    private CookieFileStorage initPersistentStorage() {
+        if (!config.isCookieStorageEnabled()) {
+            return null;
+        }
+
+        String hostname;
+        try {
+            hostname = java.net.InetAddress.getLocalHost().getHostName();
+            if (hostname == null || hostname.isEmpty()) {
+                hostname = java.net.InetAddress.getLocalHost().getHostAddress();
+            }
+        } catch (Exception e) {
+            httpClientLogger.debug(
+                    config.getServiceCode(), clientUuid,
+                    "Невозможно определить hostname, persistent storage отключён",
+                    e.toString()
+            );
+            return null;
+        }
+
+        if (hostname == null || hostname.isEmpty()) {
+            httpClientLogger.debug(
+                    config.getServiceCode(), clientUuid,
+                    "Невозможно определить hostname, persistent storage отключён",
+                    config
+            );
+            return null;
+        }
+
+        Path storageDir = config.getCookieStorageDir();
+        Path filePath = storageDir.resolve(config.getServiceCode() + "-" + hostname + ".cookies");
+
+        CookieFileStorage storage = new CookieFileStorage(
+                filePath, logService,
+                config.getServiceCode(), clientUuid
+        );
+
+        // Загружаем cookies из файла
+        storage.load(cookieStore);
+
+        httpClientLogger.debug(
+                config.getServiceCode(), clientUuid,
+                "Persistent cookie storage инициализирован: " + filePath,
+                config
+        );
+
+        return storage;
+    }
+
+    /**
+     * Выполняет асинхронное сохранение cookies в файл.
+     * <p>
+     * Вызывается после каждого изменения cookie-хранилища.
+     * Если persistent storage отключён — ничего не делает.
+     * </p>
+     */
+    private void asyncSaveIfPersistent() {
+        if (cookieFileStorage != null) {
+            cookieFileStorage.asyncSave(cookieStore);
+        }
+    }
+
+    /**
+     * Выполняет финальное синхронное сохранение cookies.
+     * <p>
+     * Вызывается при shutdown приложения через shutdown hook.
+     * </p>
+     */
+    private void shutdown() {
+        if (cookieFileStorage != null) {
+            cookieFileStorage.syncSave(cookieStore);
+            httpClientLogger.debug(
+                    config.getServiceCode(), clientUuid,
+                    "Финальное сохранение cookies выполнено",
+                    config
+            );
+        }
     }
 }

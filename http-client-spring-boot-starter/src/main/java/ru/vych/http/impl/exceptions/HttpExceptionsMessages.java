@@ -31,4 +31,10 @@ public final class HttpExceptionsMessages {
     public static String RESPONSE_ERROR_REQUEST_BODY_SERIALIZATION = "Ошибка при сериализации тела запроса";
     public static String RESPONSE_ERROR_RESPONSE_BODY_DESERIALIZATION = "Ошибка при десериализации тела ответа";
     public static String RESPONSE_ERROR_CANT_DESERIALIZE_BODY = "Ошибка при десериализации тела ответа";
+
+    // Cookie storage errors
+    public static String COOKIE_STORAGE_ERROR_READ = "Ошибка чтения cookie-файла";
+    public static String COOKIE_STORAGE_ERROR_WRITE = "Ошибка записи cookie-файла";
+    public static String COOKIE_STORAGE_ERROR_CORRUPTED = "Cookie-файл повреждён (невалидный JSON)";
+    public static String COOKIE_STORAGE_ERROR_HOSTNAME = "Невозможно определить hostname для persistent storage";
 }
