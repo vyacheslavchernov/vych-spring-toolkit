@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: package
 ---
 
@@ -35,6 +35,34 @@ scope: package
 **Lombok:** `@RequiredArgsConstructor`.
 
 **Особенности:** pretty-print entities получает ANSI-white + dim-эффект при `dimEntities=true`.
+
+### `FileAppender`
+
+Реализация `LogAppender` для записи логов в файлы с поддержкой ежедневной ротации, настраиваемого форматирования и буферизации.
+
+**Формат вывода:** по умолчанию идентичен консольному аппендеру: `<timestamp>     <LEVEL>     [<serviceCode>] : <message> <entities>`.
+
+**Ключевые методы:**
+- `init()` — валидирует конфигурацию, создаёт директорию, открывает файл для дозаписи.
+- `append(LogEvent event)` — проверяет уровень, форматирует строку, записывает в буфер с flush, потокобезопасен.
+- `openNewFile()` — открывает новый файл по паттерну с подстановкой даты и timestamp.
+- `extractDateFromFilename(String filename)` — извлекает дату из имени файла для проверки ротации.
+- `rotateIfNeeded()` — при смене даты открывает новый файл, закрывает старый.
+- `close()` — flushит буфер, закрывает файл.
+
+**Поля (final, `@RequiredArgsConstructor`):** `properties` (`FileAppenderProperties`), `writeMonitor` (потокобезопасность).
+
+**Транзиентные поля:** `logFilePath` (`Path`), `currentDateInFilename` (`LocalDate`), `writer` (`BufferedWriter`).
+
+**Lombok:** `@RequiredArgsConstructor`.
+
+**Внутреннее логирование:** `internalLog(String)` → `System.out` (инфо), `internalLogError(String)` → `System.err` (ошибки). Используется для диагностики: инициализация, ротация, закрытие.
+
+**Особенности:**
+- Ротация по дате (не по размеру).
+- Суффиксы `_1`, `_2` при коллизии имён файлов.
+- Потокобезопасная запись через `synchronized(writeMonitor)`.
+- Старые файлы не удаляются автоматически.
 
 ## Зависимости
 

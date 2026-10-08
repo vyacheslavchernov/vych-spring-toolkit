@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: architecture
 ---
 
@@ -63,7 +63,6 @@ scope: architecture
 | `@NoArgsConstructor` | DTO в тестах |
 | `@Accessors(chain = true)` | Fluent API: `HttpClientConfig`, `Request`, `Request.Builder`, `CookieEntry` |
 | `@ToString` / `@EqualsAndHashCode` | Entity-классы |
-| `@Slf4j` | Для внутреннего логирования |
 
 **НЕ используется `@Builder`** — вместо него кастомный inner class `Builder`.
 
@@ -120,10 +119,26 @@ Exception (checked)
 
 ## 7. Логирование
 
-- Кастомный `LogService` вместо SLF4J напрямую
+### Правило
+
+**Только кастомный `LogService`. Никаких внешних библиотек логирования (SLF4J, Logback и т.п.).**
+
 - Каждый сервис имеет `SERVICE_CODE` (например, `"LoggerService"`, `"ConsoleAppender"`)
 - Pattern: `logService.debug/info/warn/error(serviceCode, uuid, message, entities...)`
 - UUID для отслеживания контекста
+
+### Внутреннее логирование аппендеров и модуля логера
+
+Для диагностических сообщений внутри аппендеров (`FileAppender`, `ConsoleAppender`) и других внутренних классов модуля логера, если логирование через `LogService` не подходит:
+
+- **System.out** — для информационных сообщений: инициализация, закрытие, ротация, успешные операции
+- **System.err** — только для сообщений об ошибках
+
+Пример:
+```java
+System.out.println("[FileAppender] Инициализирован. Файл логов: " + logFilePath);
+System.err.println("[FileAppender] Не удалось закрыть файл: " + e.getMessage());
+```
 
 **HttpClientLogger** — обёртка над `LogService`:
 - `info(forced, ...)` — если `forced=true`, логирует всегда

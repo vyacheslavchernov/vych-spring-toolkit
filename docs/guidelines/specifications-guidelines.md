@@ -1,3 +1,8 @@
+---
+last_updated: 2026-10-09
+scope: guideline
+---
+
 # Guideline по написанию спецификаций
 
 ## 1. Назначение

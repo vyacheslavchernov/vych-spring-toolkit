@@ -19,7 +19,7 @@ scope: package
 
 **Ключевые методы:** `execute(Request)` — цепочка: request-interceptors → get()/post() → response-interceptors. `buildBody(Request)` — поддержка null/String/byte[]/JSON payload. `buildUri(Request)` — percent-encoding с сохранением `%XX`. `buildResponse(HttpResponse, Request)` — десериализация через Jackson.
 
-**Lombok:** `@Slf4j` (не используется напрямую, логирование через `HttpClientLogger`).
+**Логирование:** через `HttpClientLogger` (обёртка над `LogService`).
 
 **Особенности:** собственное `ConcurrentHashMap` cookie-хранилище (не глобальный `CookieHandler`). Порядок хедеров: config → request → cookies.
 
