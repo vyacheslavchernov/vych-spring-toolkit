@@ -11,8 +11,9 @@
 |---|---|
 | Общая архитектура, паттерны, зависимости | [docs/architecture.md](docs/architecture.md) |
 | Coding standards, конвенции, паттерны | [docs/coding-standards.md](docs/coding-standards.md) |
-| Commit guidelines | [docs/commit-guidelines.md](docs/commit-guidelines.md) |
+| Commit guidelines | [docs/guidelines/commit-guidelines.md](docs/guidelines/commit-guidelines.md) |
 | Build commands | [docs/build-commands.md](docs/build-commands.md) |
+| Правила написания спецификаций | [docs/guidelines/specifications-guidelines.md](docs/guidelines/specifications-guidelines.md) |
 | Обзор проекта, навигация | [docs/README.md](docs/README.md) |
 | Обзор модулей | [docs/modules/README.md](docs/modules/README.md) |
 | HTTP-клиент starter | [docs/modules/http-client.md](docs/modules/http-client.md) |
@@ -22,7 +23,7 @@
 | Фреймворки и конвенции тестирования | [docs/testing/overview.md](docs/testing/overview.md) |
 | Юнит-тесты | [docs/testing/unit-tests.md](docs/testing/unit-tests.md) |
 | Интеграционные тесты, mock-сервер | [docs/testing/integration-tests.md](docs/testing/integration-tests.md) |
-| Правила создания документации для AI | [docs/agent-documentation-guidelines.md](docs/agent-documentation-guidelines.md) |
+| Правила создания документации для AI | [docs/guidelines/agent-documentation-guidelines.md](docs/guidelines/agent-documentation-guidelines.md) |
 
 ## Структура проекта
 
@@ -38,6 +39,10 @@ vych-spring-toolkit/
 ```
 
 ## Практические инструкции для AI-агентов
+
+### Начало работы
+1. **Изучи документацию релевантную для задачи**
+2. **Составь план выполнения задачи**
 
 ### Работа с кодом
 

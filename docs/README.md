@@ -16,8 +16,12 @@ scope: architecture
 ### Архитектура и стандарты
 - [architecture.md](architecture.md) — общая архитектура, паттерны, зависимости между модулями
 - [coding-standards.md](coding-standards.md) — конвенции написания кода, стили, паттерны, правила тестирования
-- [commit-guidelines.md](commit-guidelines.md) — конвенции оформления коммитов
 - [build-commands.md](build-commands.md) — Maven-команды: сборка, тесты, версии, публикация
+
+### Гайдлайны
+- [guidelines/commit-guidelines.md](guidelines/commit-guidelines.md) — конвенции оформления коммитов
+- [guidelines/agent-documentation-guidelines.md](guidelines/agent-documentation-guidelines.md) — правила создания и поддержки документации для AI-агентов
+- [guidelines/specifications-guidelines.md](guidelines/specifications-guidelines.md) — правила написания спецификаций
 
 ### Модули
 - [modules/README.md](modules/README.md) — обзор всех модулей
@@ -53,4 +57,3 @@ scope: architecture
 
 ### Внешняя документация
 - [GIGACODE.md](../GIGACODE.md) — build commands, структура проекта, инструкции для AI-агентов
-- [agent-documentation-guidelines.md](agent-documentation-guidelines.md) — правила создания и поддержки документации для AI-агентов
