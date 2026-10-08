@@ -21,6 +21,10 @@ scope: architecture
 docs/
 ├── README.md                          # Главная: обзор проекта, навигация
 ├── {architecture}.md                  # Архитектура, паттерны, зависимости
+├── guidelines/
+│   ├── commit-guidelines.md           # Конвенции оформления коммитов
+│   ├── agent-documentation-guidelines.md  # Правила создания документации для AI
+│   └── specifications-guidelines.md   # Правила написания спецификаций
 ├── modules/
 │   ├── README.md                      # Обзор модулей (что есть, зачем)
 │   ├── {module}.md                    # Модуль: назначение, ключевые классы
