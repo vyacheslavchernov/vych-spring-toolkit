@@ -62,7 +62,8 @@ public class LoggerAutoConfiguration {
                 properties.getConsole().isIncludeEntities(),
                 properties.getConsole().isPrettyEntities(),
                 properties.getConsole().isEnableColors(),
-                properties.getConsole().isDimEntities()
+                properties.getConsole().isDimEntities(),
+                properties.getConsole().getFormatPattern()
         );
     }
 

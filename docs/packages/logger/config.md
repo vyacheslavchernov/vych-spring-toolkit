@@ -33,6 +33,7 @@ scope: package
 | `prettyEntities` | `boolean` | `false` | Pretty-print JSON объектов |
 | `enableColors` | `boolean` | `false` | Использовать ANSI-цвета |
 | `dimEntities` | `boolean` | `false` | Делать вывод объектов менее ярким |
+| `formatPattern` | `String` | `null` | Кастомный формат строки лога через плейсхолдеры (`%date`, `%level`, `%serviceCode`, `%message`, `%entity`) |
 
 **Lombok:** `@Getter @Setter @ConfigurationProperties(prefix = "logger")`.
 

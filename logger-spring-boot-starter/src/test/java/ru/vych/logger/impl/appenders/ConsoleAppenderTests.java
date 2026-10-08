@@ -39,7 +39,7 @@ class ConsoleAppenderTests {
     void appenderEnabledByDefault() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var event = LogEvent.create("TestService", "uuid-1", LoggingLevel.DEBUG, "Debug message");
@@ -50,11 +50,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("Фильтрация по уровню — пропускает события ниже минимального")
+    @DisplayName("Фильтрация по уровню -- пропускает события ниже минимального")
     void levelFilteringSkipsLowerEvents() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.WARN,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var debugEvent = LogEvent.create("TestService", "uuid-1", LoggingLevel.DEBUG, "Debug message");
@@ -78,11 +78,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("ERROR выводится в System.err, остальные — в System.out")
+    @DisplayName("ERROR выводится в System.err, остальные -- в System.out")
     void errorStreamSeparation() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var infoEvent = LogEvent.create("TestService", "uuid-1", LoggingLevel.INFO, "Info message");
@@ -107,7 +107,7 @@ class ConsoleAppenderTests {
     void outputFormat() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var event = LogEvent.create("MyService", "uuid-123", LoggingLevel.INFO, "Test message");
@@ -133,7 +133,7 @@ class ConsoleAppenderTests {
     void jsonEntitiesSerialization() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                true, false, false, false
+                true, false, false, false, null
         );
 
         var event = LogEvent.create(
@@ -160,7 +160,7 @@ class ConsoleAppenderTests {
     void prettyEntities() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                true, true, false, false
+                true, true, false, false, null
         );
 
         var event = LogEvent.create(
@@ -180,11 +180,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("Отключение entities — не выводит их")
+    @DisplayName("Отключение entities -- не выводит их")
     void entitiesDisabled() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var event = LogEvent.create(
@@ -209,7 +209,7 @@ class ConsoleAppenderTests {
     void dimEntities() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                true, false, false, true
+                true, false, false, true, null
         );
 
         var event = LogEvent.create(
@@ -234,7 +234,7 @@ class ConsoleAppenderTests {
     void dimEntitiesOnlyWithIncludeEntities() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, true
+                false, false, false, true, null
         );
 
         var event = LogEvent.create(
@@ -258,7 +258,7 @@ class ConsoleAppenderTests {
     void getServiceCodeReturnsCorrectCode() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         assertThat(appender.getServiceCode())
@@ -267,11 +267,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("ANSI цвета для уровней — DEBUG=White, INFO=Blue, WARN=Yellow, ERROR=Red")
+    @DisplayName("ANSI цвета для уровней -- DEBUG=White, INFO=Blue, WARN=Yellow, ERROR=Red")
     void ansiColorsByLevel() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, true, false
+                false, false, true, false, null
         );
 
         var debugEvent = LogEvent.create("S", "u1", LoggingLevel.DEBUG, "Debug");
@@ -293,11 +293,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("ANSI цвета применяются только к LEVEL, не к всему сообщению")
+    @DisplayName("ANSI цвета применяются только к LEVEL, не ко всему сообщению")
     void ansiColorsOnlyToLevel() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, true, false
+                false, false, true, false, null
         );
 
         var event = LogEvent.create("S", "u1", LoggingLevel.INFO, "Info message");
@@ -311,11 +311,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("Ошибка сериализации — бросает LoggerAppenderException")
+    @DisplayName("Ошибка сериализации -- бросает LoggerAppenderException")
     void serializationErrorThrowsLoggerAppenderException() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                true, false, false, false
+                true, false, false, false, null
         );
 
         // Создаём event с объектом, который не может быть сериализован
@@ -334,11 +334,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("Multiple append — добавляет несколько записей")
+    @DisplayName("Multiple append -- добавляет несколько записей")
     void multipleAppends() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var event1 = LogEvent.create("S1", "u1", LoggingLevel.INFO, "Message 1");
@@ -355,11 +355,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("Отключённый аппендер — не выводит ничего")
+    @DisplayName("Отключённый аппендер -- не выводит ничего")
     void appenderDisabled() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.WARN,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var debugEvent = LogEvent.create("S", "u1", LoggingLevel.DEBUG, "Debug");
@@ -375,11 +375,11 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("Сообщение без текста — пустая строка допустима")
+    @DisplayName("Сообщение без текста -- пустая строка допустима")
     void messageWithoutText() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                false, false, false, false
+                false, false, false, false, null
         );
 
         var event = LogEvent.create("S", "u1", LoggingLevel.INFO, "", new Object[]{"entity1"});
@@ -393,17 +393,293 @@ class ConsoleAppenderTests {
     }
 
     @Test
-    @DisplayName("Пустой список entities — не выбрасывает исключение")
+    @DisplayName("Пустой список entities -- не выбрасывает исключение")
     void emptyEntitiesList() throws LoggerAppenderException {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
-                true, false, false, false
+                true, false, false, false, null
         );
 
         var event = LogEvent.create("S", "u1", LoggingLevel.INFO, "Message");
         assertThatCode(() -> appender.append(event))
                 .describedAs("Событие с пустым списком entities должно быть обработано")
                 .doesNotThrowAnyException();
+    }
+
+    // ========== Тесты для кастомного форматирования ==========
+
+    @Test
+    @DisplayName("Формат по умолчанию -- при formatPattern=null")
+    void defaultFormatWhenPatternIsNull() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false, null
+        );
+
+        var event = LogEvent.create("MyService", "uuid-1", LoggingLevel.INFO, "Test message");
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("Формат по умолчанию должен содержать все поля")
+                .contains("INFO")
+                .contains("[MyService]")
+                .contains("Test message");
+    }
+
+    @Test
+    @DisplayName("Формат по умолчанию -- при formatPattern=пустая строка")
+    void defaultFormatWhenPatternIsEmpty() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false, ""
+        );
+
+        var event = LogEvent.create("MyService", "uuid-1", LoggingLevel.INFO, "Test message");
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("Пустой формат должен использовать формат по умолчанию")
+                .contains("INFO")
+                .contains("[MyService]")
+                .contains("Test message");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- подставляет все плейсхолдеры")
+    void customFormatterWithAllPlaceholders() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false,
+                "%date [%level] %serviceCode - %message"
+        );
+
+        var event = LogEvent.create("MyService", "uuid-1", LoggingLevel.INFO, "Test message");
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("Кастомный формат должен содержать date")
+                .contains("2026-");
+        assertThat(content)
+                .describedAs("Кастомный формат должен содержать level")
+                .contains("INFO");
+        assertThat(content)
+                .describedAs("Кастомный формат должен содержать serviceCode")
+                .contains("[MyService]");
+        assertThat(content)
+                .describedAs("Кастомный формат должен содержать message")
+                .contains("Test message");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- кастомный порядок плейсхолдеров")
+    void customFormatterCustomOrder() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false,
+                "%message | %level | %serviceCode"
+        );
+
+        var event = LogEvent.create("MyService", "uuid-1", LoggingLevel.WARN, "Warning occurred");
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("Порядок полей должен соответствовать формату")
+                .contains("Warning occurred")
+                .contains("WARN ")
+                .contains("[MyService]");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- фиксированная ширина для %level (5 символов)")
+    void customFormatterLevelFixedWidth() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false,
+                "%date [%level]"
+        );
+
+        var debugEvent = LogEvent.create("S", "u1", LoggingLevel.DEBUG, "Debug");
+        var infoEvent = LogEvent.create("S", "u2", LoggingLevel.INFO, "Info");
+        var warnEvent = LogEvent.create("S", "u3", LoggingLevel.WARN, "Warn");
+        var errorEvent = LogEvent.create("S", "u4", LoggingLevel.ERROR, "Error");
+
+        appender.append(debugEvent);
+        appender.append(infoEvent);
+        appender.append(warnEvent);
+        appender.append(errorEvent);
+
+        var content = captureOut.toString() + captureErr.toString();
+        // DEBUG (5 символов), INFO (5 символов), WARN (5 символов), ERROR (5 символов)
+        // Все должны быть выровнены по левому краю с дополнением пробелами
+        assertThat(content)
+                .describedAs("Все уровни должны быть выровнены по левому краю, ширина 5")
+                .contains("DEBUG")
+                .contains("INFO ")
+                .contains("WARN ");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- фиксированная ширина для %serviceCode (30 символов)")
+    void customFormatterServiceCodeFixedWidth() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false,
+                "%date [%serviceCode] %message"
+        );
+
+        var shortEvent = LogEvent.create("S", "u1", LoggingLevel.INFO, "Message");
+        var longEvent = LogEvent.create("VeryLongServiceName", "u2", LoggingLevel.INFO, "Message");
+
+        appender.append(shortEvent);
+        appender.append(longEvent);
+
+        var content = captureOut.toString();
+        // [S] должен быть дополнен пробелами до 30 символов (выравнивание по правому краю)
+        // serviceCode = "[S]" (3 символа), дополняется до 30 → 27 пробелов + [S]
+        assertThat(content)
+                .describedAs("ServiceCode должен быть выровнен по правому краю, ширина 30")
+                .contains("[                           [S]]")
+                .contains("[         [VeryLongServiceName]]");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- фиксированная ширина только для первого вхождения %level")
+    void customFormatterLevelFixedWidthOnlyFirstOccurrence() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false,
+                "%level - %level"
+        );
+
+        var event = LogEvent.create("S", "u1", LoggingLevel.INFO, "Message");
+        appender.append(event);
+
+        var content = captureOut.toString();
+        // Первое вхождение должно быть выровнено (INFO ), второе — без выравнивания (INFO)
+        assertThat(content)
+                .describedAs("Первое вхождение %level должно быть выровнено, второе — нет")
+                .contains("INFO  - INFO");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- неверный формат использует формат по умолчанию")
+    void customFormatterInvalidUsesDefault() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, false, false,
+                "%invalid %placeholder"
+        );
+
+        var event = LogEvent.create("MyService", "uuid-1", LoggingLevel.INFO, "Test message");
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("Неверный формат должен использовать формат по умолчанию")
+                .contains("INFO")
+                .contains("[MyService]")
+                .contains("Test message");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- entities подставляются через %entity")
+    void customFormatterWithEntitiesPlaceholder() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                true, false, false, false,
+                "%date [%level] %message : %entity"
+        );
+
+        var event = LogEvent.create(
+                "TestService",
+                "uuid-1",
+                LoggingLevel.INFO,
+                "User logged in",
+                new Object[]{"entity1", 42}
+        );
+
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("Вывод должен содержать entity1")
+                .contains("entity1");
+        assertThat(content)
+                .describedAs("Вывод должен содержать 42")
+                .contains("42");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- dimEntities работает с %entity")
+    void customFormatterDimEntities() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                true, false, false, true,
+                "%date [%level] %message : %entity"
+        );
+
+        var event = LogEvent.create(
+                "TestService",
+                "uuid-1",
+                LoggingLevel.INFO,
+                "Message",
+                new Object[]{"entity1"}
+        );
+
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("dimEntities должен добавить ANSI reset codes")
+                .contains("\u001B[0m");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- ANSI цвета применяются к первому вхождению %level")
+    void customFormatterAnsiColorsToFirstLevel() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                false, false, true, false,
+                "%level - %level"
+        );
+
+        var event = LogEvent.create("S", "u1", LoggingLevel.INFO, "Info message");
+        appender.append(event);
+
+        var content = captureOut.toString();
+        // ANSI codes должны быть вокруг первого вхождения INFO
+        assertThat(content)
+                .describedAs("ANSI codes должны быть вокруг первого %level")
+                .contains("\u001B[");
+    }
+
+    @Test
+    @DisplayName("Кастомный форматтер -- prettyEntities с кастомным форматом")
+    void customFormatterPrettyEntities() throws LoggerAppenderException {
+        var appender = new ConsoleAppender(
+                LoggingLevel.DEBUG,
+                true, true, false, false,
+                "%date [%level] %message : %entity"
+        );
+
+        var event = LogEvent.create(
+                "TestService",
+                "uuid-1",
+                LoggingLevel.INFO,
+                "Message",
+                new Object[]{"entity1", "entity2"}
+        );
+
+        appender.append(event);
+
+        var content = captureOut.toString();
+        assertThat(content)
+                .describedAs("Pretty JSON должен содержать переносы строк")
+                .contains("\n");
     }
 
     // Вспомогательный класс, который не может быть сериализован

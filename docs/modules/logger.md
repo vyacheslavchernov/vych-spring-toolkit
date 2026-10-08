@@ -29,11 +29,19 @@ Spring Boot starter для кастомного консольного логг�
 
 ## Конфигурация
 
-Файловый аппендер включается свойством `logger.file.enabled=true`.
+Консольный аппендер включён по умолчанию. Файловый аппендер включается свойством `logger.file.enabled=true`.
 
 Пример:
 ```yaml
 logger:
+  console:
+    enabled: true
+    level: INFO
+    include-entities: false
+    pretty-entities: false
+    enable-colors: false
+    dim-entities: false
+    format-pattern: "%date [%level] %serviceCode - %message"
   file:
     enabled: true
     dir: ./logs
@@ -44,6 +52,7 @@ logger:
     include-entities: false
     pretty-entities: false
     buffer-size: 8192
+    log-formatter: "%date     %level     %serviceCode : %message %entity"
 ```
 
 ## Тесты
@@ -52,7 +61,7 @@ Unit-тесты для logger-модуля:
 - `FileAppenderTests` — инициализация, запись в файл, фильтрация по уровню, сериализация, ротация, потокобезопасность
 - `FileAppenderProviderTests` — создание аппендера через провайдер
 - `FileAppenderPropertiesTests` — значения по умолчанию, генерация имени файла, валидация
-- `ConsoleAppenderTests` — фильтрация по уровню, разделение потоков (System.out/System.err), ANSI цвета, JSON entities, pretty entities, dim entities
+- `ConsoleAppenderTests` — фильтрация по уровню, разделение потоков (System.out/System.err), ANSI цвета, JSON entities, pretty entities, dim entities, кастомное форматирование через плейсхолдеры (`%date`, `%level`, `%serviceCode`, `%message`, `%entity`), фиксированная ширина, fallback по умолчанию
 - `LogServiceTests` — обработка ошибок аппендеров (ошибка в одном не останавливает другие), no-message variants, timestamp
 
 Логика проверяется также через интеграционные тесты в `vych-spring-toolkit-tests`.
