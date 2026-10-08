@@ -16,4 +16,8 @@ public class HttpClientInvalidRequestException extends HttpClientException {
     public HttpClientInvalidRequestException(String message) {
         super(message);
     }
+
+    public HttpClientInvalidRequestException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

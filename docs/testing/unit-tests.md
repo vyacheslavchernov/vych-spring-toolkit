@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: testing
 ---
 
@@ -9,13 +9,16 @@ scope: testing
 
 ## http-client-spring-boot-starter
 
-~28 тестовых классов покрывают:
+6 тестовых классов покрывают:
 
 - Создание клиента (`HttpClientImplTests`)
-- GET/POST запросы
-- Десериализация через Jackson
-- Интерсепторы (`HttpClientLoggerTests`)
-- Обработка статус-кодов (`ResponseTests`)
+- Cookie storage и isolation (`HttpClientCookieStoreTests`)
+- Логирование (`HttpClientLoggerTests`)
+- Request builder validation (`RequestBuilderTests`)
+- Response body casting (`ResponseTests`)
+- Обработка исключений интерсепторов (`HttpClientInterceptorExceptionTests`)
+
+GET/POST запросы, десериализация через Jackson и обработка статус-кодов также покрыты `HttpClientImplTests` и интеграционными тестами.
 
 ### Паттерны
 
@@ -25,7 +28,13 @@ scope: testing
 
 ## logger-spring-boot-starter
 
-**Unit-тесты отсутствуют.** Логика проверяется косвенно через интеграционные тесты.
+5 тестовых классов покрывают:
+
+- `FileAppenderTests` — инициализация, запись, фильтрация, сериализация, ротация, потокобезопасность
+- `FileAppenderProviderTests` — создание аппендера через провайдер
+- `FileAppenderPropertiesTests` — значения по умолчанию, валидация
+- `ConsoleAppenderTests` — фильтрация, ANSI цвета, JSON entities, pretty/dim entities
+- `LogServiceTests` — обработка ошибок аппендеров, no-message variants, timestamp
 
 ## Кросс-ссылки
 

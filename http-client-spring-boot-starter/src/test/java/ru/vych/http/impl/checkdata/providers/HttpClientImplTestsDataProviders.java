@@ -66,32 +66,32 @@ public class HttpClientImplTestsDataProviders {
                 Arguments.of(
                         new HttpClientConfig(SERVICE_CODE).setRoot(null),
                         HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_ROOT_CANT_BE_NULL
+                        CREATION_ERROR_ROOT_IS_NULL
                 ),
                 Arguments.of(
                         new HttpClientConfig(SERVICE_CODE).setTimeout(null),
                         HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT
+                        CREATION_ERROR_INVALID_TIMEOUT_OR_VERSION
                 ),
                 Arguments.of(
                         new HttpClientConfig(SERVICE_CODE).setTimeout(Duration.ZERO),
                         HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT
+                        CREATION_ERROR_INVALID_TIMEOUT_OR_VERSION
                 ),
                 Arguments.of(
                         new HttpClientConfig(SERVICE_CODE).setVersion(null),
                         HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT
+                        CREATION_ERROR_INVALID_TIMEOUT_OR_VERSION
                 ),
                 Arguments.of(
                         new HttpClientConfig(SERVICE_CODE).setCookiePolicy(null),
                         HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL
+                        CREATION_ERROR_COOKIE_POLICY_IS_NULL
                 ),
                 Arguments.of(
                         new HttpClientConfig(SERVICE_CODE).setCookies(null),
                         HttpClientConfigurationException.class,
-                        CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL
+                        CREATION_ERROR_COOKIES_IS_NULL
                 )
         );
     }

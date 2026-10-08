@@ -48,7 +48,14 @@ logger:
 
 ## Тесты
 
-Unit-тесты для logger-модуля не реализованы. Логика проверяется косвенно через интеграционные тесты в `vych-spring-toolkit-tests`.
+Unit-тесты для logger-модуля:
+- `FileAppenderTests` — инициализация, запись в файл, фильтрация по уровню, сериализация, ротация, потокобезопасность
+- `FileAppenderProviderTests` — создание аппендера через провайдер
+- `FileAppenderPropertiesTests` — значения по умолчанию, генерация имени файла, валидация
+- `ConsoleAppenderTests` — фильтрация по уровню, разделение потоков (System.out/System.err), ANSI цвета, JSON entities, pretty entities, dim entities
+- `LogServiceTests` — обработка ошибок аппендеров (ошибка в одном не останавливает другие), no-message variants, timestamp
+
+Логика проверяется также через интеграционные тесты в `vych-spring-toolkit-tests`.
 
 ## Кросс-ссылки
 
