@@ -2,6 +2,7 @@ package ru.vych.http.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.common.CookiesPolicies;
@@ -72,7 +73,7 @@ public class HttpClientImpl implements HttpClient {
     @Getter
     private final String clientUuid = UUID.randomUUID().toString();
     private final java.net.http.HttpClient client;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
 
     private final HttpClientConfig config;
     private final HttpClientLogger httpClientLogger;
@@ -115,10 +116,13 @@ public class HttpClientImpl implements HttpClient {
         }
 
         if (config.getRoot() == null) {
-            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_ROOT_CANT_BE_NULL);
+            throw new HttpClientConfigurationException(CREATION_ERROR_ROOT_IS_NULL);
         }
         this.config = config;
         this.httpClientLogger = new HttpClientLogger(config, logService);
+        this.mapper = new ObjectMapper();
+        // Регистрация модуля для поддержки Java 8 date/time типов
+        this.mapper.registerModule(new JavaTimeModule());
 
         if (requestInterceptors != null) {
             this.requestInterceptors.addAll(requestInterceptors);
@@ -135,19 +139,19 @@ public class HttpClientImpl implements HttpClient {
                     .version(config.getVersion());
         } catch (IllegalArgumentException | NullPointerException e) {
             httpClientLogger.error(
-                    config.getServiceCode(), clientUuid, CREATION_ERROR_CONFIGURATION_IS_INCORRECT,
+                    config.getServiceCode(), clientUuid, CREATION_ERROR_INVALID_TIMEOUT_OR_VERSION,
                     config, e.toString()
             );
-            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT, e);
+            throw new HttpClientConfigurationException(CREATION_ERROR_INVALID_TIMEOUT_OR_VERSION, e);
         }
 
         if (config.getCookiePolicy() == null) {
-            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIE_POLICY_CANT_BE_NULL);
+            throw new HttpClientConfigurationException(CREATION_ERROR_COOKIE_POLICY_IS_NULL);
         }
         cookiePolicy = config.getCookiePolicy();
 
         if (config.getCookies() == null) {
-            throw new HttpClientConfigurationException(CREATION_ERROR_CONFIGURATION_IS_INCORRECT_COOKIES_CANT_BE_NULL);
+            throw new HttpClientConfigurationException(CREATION_ERROR_COOKIES_IS_NULL);
         }
         for (CookieEntry cookie : config.getCookies()) {
             String host = cookie.getUri().getHost();
@@ -216,7 +220,7 @@ public class HttpClientImpl implements HttpClient {
                     config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
                     request, e.toString()
             );
-            throw new HttpClientExecuteRequestException(REQUEST_ERROR_GENERIC, e);
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
         }
         return buildResponse(rs, request);
     }
@@ -245,7 +249,7 @@ public class HttpClientImpl implements HttpClient {
             httpClientLogger.error(
                     config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
                     request, e.toString());
-            throw new HttpClientExecuteRequestException(REQUEST_ERROR_GENERIC, e);
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
         }
         return buildResponse(rs, request);
     }
@@ -289,9 +293,9 @@ public class HttpClientImpl implements HttpClient {
 
         } catch (JsonProcessingException e) {
             httpClientLogger.error(
-                    config.getServiceCode(), clientUuid, REQUEST_ERROR_CANT_HANDLE_BODY,
+                    config.getServiceCode(), clientUuid, RESPONSE_ERROR_REQUEST_BODY_SERIALIZATION,
                     payload, e.toString());
-            throw new HttpClientHandleResponseException(REQUEST_ERROR_CANT_HANDLE_BODY, e);
+            throw new HttpClientHandleResponseException(RESPONSE_ERROR_REQUEST_BODY_SERIALIZATION, e);
         }
     }
 
@@ -563,9 +567,9 @@ public class HttpClientImpl implements HttpClient {
             return mapper.readValue(body, responseClass);
         } catch (JsonProcessingException e) {
             httpClientLogger.error(
-                    config.getServiceCode(), clientUuid, RESPONSE_ERROR_CANT_DESERIALIZE_BODY,
+                    config.getServiceCode(), clientUuid, RESPONSE_ERROR_RESPONSE_BODY_DESERIALIZATION,
                     body, responseClass, e.toString());
-            throw new HttpClientHandleResponseException(RESPONSE_ERROR_CANT_DESERIALIZE_BODY, e);
+            throw new HttpClientHandleResponseException(RESPONSE_ERROR_RESPONSE_BODY_DESERIALIZATION, e);
         }
     }
 
@@ -605,12 +609,18 @@ public class HttpClientImpl implements HttpClient {
 
     @Override
     public List<HttpCookie> getCookies(String host) {
+        if (host == null) {
+            throw new NullPointerException("Host cannot be null in getCookies()");
+        }
         List<HttpCookie> cookies = cookieStore.get(host);
         return cookies != null ? List.copyOf(cookies) : Collections.emptyList();
     }
 
     @Override
     public void clearCookies(String host) {
+        if (host == null) {
+            throw new NullPointerException("Host cannot be null in clearCookies()");
+        }
         cookieStore.remove(host);
     }
 

@@ -14,12 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
-import java.util.List;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Тесты для класса {@link FileAppender}, включая проверку записи логов в файл,
@@ -206,7 +203,7 @@ class FileAppenderTests {
                 "uuid-123",
                 LoggingLevel.INFO,
                 "Test message",
-                new Object[]{"entity1", 42}
+                new Object[]{"myEntity", "myValue"}
         );
 
         fileAppender.append(event);
@@ -214,8 +211,8 @@ class FileAppenderTests {
         var content = Files.readString(tempDir.resolve("app.log"), StandardCharsets.UTF_8);
         assertThat(content)
                 .describedAs("Файл не должен содержать entities")
-                .doesNotContain("entity1")
-                .doesNotContain("42");
+                .doesNotContain("myEntity")
+                .doesNotContain("myValue");
     }
 
     @Test

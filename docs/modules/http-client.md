@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-09
 scope: module
 ---
 
@@ -27,9 +27,15 @@ Spring Boot starter для HTTP-клиента с поддержкой GET/POST,
 
 ## Тесты
 
-Юнит-тесты (~28 классов) покрывают: создание клиента, GET/POST запросы, десериализацию, интерсепторы, обработку статусов.
+Юнит-тесты (6 классов) в `http-client-spring-boot-starter/src/test/`:
+- `HttpClientImplTests` — создание клиента, GET/POST, десериализация, построение URI
+- `HttpClientCookieStoreTests` — cookie storage, isolation, policies
+- `HttpClientLoggerTests` — logging behavior (info/debug/error with logRequests)
+- `RequestBuilderTests` — request validation, builder pattern
+- `ResponseTests` — response body casting
+- `HttpClientInterceptorExceptionTests` — interceptor exception handling
 
-Интеграционные тесты в `vych-spring-toolkit-tests` проверяют работу с mock-сервером (Jersey/Grizzly на :9090).
+Интеграционные тесты (7 классов) в `vych-spring-toolkit-tests` проверяют работу с mock-сервером (Jersey/Grizzly на :9090).
 
 ## Кросс-ссылки
 
