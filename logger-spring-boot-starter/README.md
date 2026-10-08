@@ -100,6 +100,19 @@ public class MyService {
 | `logger.console.pretty-entities` | `boolean` | `false` | Форматировать вывод объектов с отступами (pretty-print) |
 | `logger.console.enable-colors` | `boolean` | `false` | Использовать ANSI-цвета в выводе |
 | `logger.console.dim-entities` | `boolean` | `false` | Делать вывод объектов менее ярким |
+| `logger.console.format-pattern` | `String` | `null` | Кастомный формат строки лога через плейсхолдеры (`%date`, `%level`, `%serviceCode`, `%message`, `%entity`). Если не задан — используется формат по умолчанию |
+
+**Плейсхолдеры форматирования:**
+
+| Плейсхолдер | Описание | Пример |
+|---|---|---|
+| `%date` | Дата/время события | `2026-10-08 14:30:22` |
+| `%level` | Уровень логирования (ширина 5, выравнивание по левому краю) | `INFO`, `WARN`, `ERROR` |
+| `%serviceCode` | Код сервиса в квадратных скобках (ширина 30, выравнивание по правому краю) | `[MyService]` |
+| `%message` | Основное сообщение | `User logged in` |
+| `%entity` | JSON-представление объектов | `{"key":"value"}` |
+
+**Ограничение:** Фиксированная ширина для `%level` и `%serviceCode` применяется только к первому вхождению плейсхолдера в шаблоне. Если плейсхолдер встречается несколько раз, остальные вхождения заменяются на значение без форматирования.
 
 ### Файловый аппендер
 
@@ -129,6 +142,7 @@ logger:
     pretty-entities: true
     enable-colors: true
     dim-entities: true
+    format-pattern: "%date [%level] %serviceCode - %message %entity"
   file:
     enabled: true
     dir: ./logs
@@ -151,6 +165,7 @@ logger.console.include-entities=true
 logger.console.pretty-entities=true
 logger.console.enable-colors=true
 logger.console.dim-entities=true
+logger.console.format-pattern=%date [%level] %serviceCode - %message %entity
 
 logger.file.enabled=true
 logger.file.dir=./logs

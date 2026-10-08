@@ -60,5 +60,14 @@ public class LogProperties {
          * Делать ли вывод объектов менее ярким (ANSI dim).
          */
         private boolean dimEntities = false;
+
+        /**
+         * Кастомный формат строки лога через плейсхолдеры.
+         * Поддерживаемые плейсхолдеры: {@code %date}, {@code %level},
+         * {@code %serviceCode}, {@code %message}, {@code %entity}.
+         * По умолчанию — {@code null}, используется формат по умолчанию:
+         * {@code "%date     %level     %serviceCode : %message %entity"}.
+         */
+        private String formatPattern;
     }
 }
