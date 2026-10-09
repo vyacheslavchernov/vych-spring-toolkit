@@ -1,17 +1,14 @@
 package http;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.http.entities.DummyDto;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.exceptions.HttpClientException;
 
-import java.util.Map;
 import java.util.UUID;
 
-import static io.qameta.allure.Allure.step;
-import static org.assertj.core.api.Assertions.assertThat;
 import static ru.vych.http.controllers.PutTestController.*;
 import static ru.vych.http.impl.common.HttpStatus.OK;
 import static ru.vych.http.impl.common.MediaType.APPLICATION_JSON;
@@ -27,7 +24,8 @@ public class HttpClientPutTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки PUT запроса с телом в виде строки")
-    public void putWithStringBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void putWithStringBodyTest() {
         var uuid = UUID.randomUUID().toString();
         var rq = Request.builder()
                 .setUrl(PUT_CONTROLLER_PATH + PUT_STRING_ENDPOINT)
@@ -47,7 +45,8 @@ public class HttpClientPutTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки PUT запроса с JSON телом")
-    public void putWithJsonBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void putWithJsonBodyTest() {
         var dummy = DummyDto.getDummy();
         var rq = Request.builder()
                 .setUrl(PUT_CONTROLLER_PATH + PUT_JSON_ENDPOINT)
@@ -67,7 +66,8 @@ public class HttpClientPutTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки PUT запроса с JSON телом DTO")
-    public void putWithDtoBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void putWithDtoBodyTest() {
         var dummy = DummyDto.getDummy();
         var rq = Request.builder()
                 .setUrl(PUT_CONTROLLER_PATH + PUT_JSON_ENDPOINT)

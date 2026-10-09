@@ -1,5 +1,6 @@
 package ru.vych.logger.impl.appenders;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,7 +10,6 @@ import ru.vych.logger.impl.common.LoggingLevel;
 import ru.vych.logger.impl.entities.LogEvent;
 import ru.vych.logger.impl.exceptions.LoggerAppenderException;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,7 +45,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Инициализация создаёт файл логов")
-    void initCreatesLogFile() throws LoggerAppenderException {
+    @SneakyThrows
+    void initCreatesLogFile() {
         fileAppender = new FileAppender(properties);
         fileAppender.init();
 
@@ -56,7 +57,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Инициализация создаёт директорию, если не существует")
-    void initCreatesDirectoryIfNotExists() throws LoggerAppenderException {
+    @SneakyThrows
+    void initCreatesDirectoryIfNotExists() {
         var nestedDir = tempDir.resolve("nested").resolve("deep");
         properties.setDir(nestedDir.toString());
 
@@ -70,7 +72,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Запись лога в файл")
-    void appendWritesLogToFile() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void appendWritesLogToFile() {
         fileAppender = new FileAppender(properties);
         fileAppender.init();
 
@@ -93,7 +96,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Запись лога с entities")
-    void appendWritesLogWithEntities() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void appendWritesLogWithEntities() {
         properties.setIncludeEntities(true);
         properties.setPrettyEntities(false);
         properties.setLogFormatter("%date %level %message %entity");
@@ -119,7 +123,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Фильтрация по уровню — пропускает события ниже минимального")
-    void appendFiltersByLevel() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void appendFiltersByLevel() {
         properties.setLevel(LoggingLevel.WARN);
         fileAppender = new FileAppender(properties);
         fileAppender.init();
@@ -159,7 +164,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("getServiceCode возвращает правильный код")
-    void getServiceCodeReturnsCorrectCode() throws LoggerAppenderException {
+    @SneakyThrows
+    void getServiceCodeReturnsCorrectCode() {
         fileAppender = new FileAppender(properties);
         fileAppender.init();
 
@@ -170,7 +176,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Pretty entities добавляет отступы в JSON")
-    void appendWithPrettyEntities() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void appendWithPrettyEntities() {
         properties.setPrettyEntities(true);
         fileAppender = new FileAppender(properties);
         fileAppender.init();
@@ -193,7 +200,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Отключение entities — не записывает их в файл")
-    void appendWithoutEntities() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void appendWithoutEntities() {
         properties.setIncludeEntities(false);
         fileAppender = new FileAppender(properties);
         fileAppender.init();
@@ -217,7 +225,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Multiple append — добавляет несколько записей")
-    void multipleAppends() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void multipleAppends() {
         fileAppender = new FileAppender(properties);
         fileAppender.init();
 
@@ -236,7 +245,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Формат по умолчанию включает serviceCode")
-    void defaultFormatterIncludesServiceCode() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void defaultFormatterIncludesServiceCode() {
         fileAppender = new FileAppender(properties);
         fileAppender.init();
 
@@ -259,7 +269,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер лога")
-    void customLogFormatter() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void customLogFormatter() {
         properties.setLogFormatter("[%date] [%level] %message");
         fileAppender = new FileAppender(properties);
         fileAppender.init();
@@ -283,7 +294,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Форматтер с entities")
-    void logFormatterWithEntities() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void logFormatterWithEntities() {
         properties.setLogFormatter("%date %level %message %entity");
         properties.setIncludeEntities(true);
         properties.setPrettyEntities(false);
@@ -308,7 +320,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Форматтер без %entity — не выбрасывает исключение")
-    void logFormatterWithoutEntityPlaceholder() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void logFormatterWithoutEntityPlaceholder() {
         properties.setLogFormatter("%date %level %message");
         properties.setIncludeEntities(true);
         fileAppender = new FileAppender(properties);
@@ -330,7 +343,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Существующий файл с таким же именем — добавляется суффикс _1")
-    void existingFileWithSameNameGetsSuffix() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void existingFileWithSameNameGetsSuffix() {
         // Создаём существующий файл
         var existingFile = tempDir.resolve("app.log");
         Files.writeString(existingFile, "existing content");
@@ -355,7 +369,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Закрытие аппендера закрывает файл")
-    void closeClosesFile() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void closeClosesFile() {
         fileAppender = new FileAppender(properties);
         fileAppender.init();
 
@@ -373,7 +388,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Имя файла с датой и timestamp")
-    void filenameWithDateAndTimestamp() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void filenameWithDateAndTimestamp() {
         properties.setDatePattern("yyyy-MM-dd");
         properties.setFilenamePattern("app-{date}_{timestamp}.log");
         fileAppender = new FileAppender(properties);
@@ -393,7 +409,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Неверный форматтер — используется формат по умолчанию")
-    void invalidFormatterUsesDefault() throws LoggerAppenderException, IOException {
+    @SneakyThrows
+    void invalidFormatterUsesDefault() {
         properties.setLogFormatter("%unknown_placeholder");
         fileAppender = new FileAppender(properties);
         fileAppender.init();
@@ -418,7 +435,8 @@ class FileAppenderTests {
 
     @Test
     @DisplayName("Потокобезопасность — несколько потоков пишут в один файл")
-    void threadSafety() throws LoggerAppenderException, IOException, InterruptedException {
+    @SneakyThrows
+    void threadSafety() {
         fileAppender = new FileAppender(properties);
         fileAppender.init();
 

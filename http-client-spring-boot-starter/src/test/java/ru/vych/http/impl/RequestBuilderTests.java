@@ -1,5 +1,6 @@
 package ru.vych.http.impl;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.http.impl.common.HttpMethod;
@@ -61,7 +62,8 @@ public class RequestBuilderTests {
      */
     @Test
     @DisplayName("buildPostWithPayloadWithContentTypeSucceeds")
-    public void buildPostWithPayloadWithContentTypeSucceeds() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildPostWithPayloadWithContentTypeSucceeds() {
         var request = Request.builder()
                 .setMethod(HttpMethod.POST)
                 .setUrl("/api/test")
@@ -81,7 +83,8 @@ public class RequestBuilderTests {
      */
     @Test
     @DisplayName("buildMinimalValidRequest")
-    public void buildMinimalValidRequest() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildMinimalValidRequest() {
         var request = Request.builder()
                 .setMethod(HttpMethod.GET)
                 .setUrl("/api/test")
@@ -99,7 +102,8 @@ public class RequestBuilderTests {
      */
     @Test
     @DisplayName("queryParamsRemovesNullKeys")
-    public void queryParamsRemovesNullKeys() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void queryParamsRemovesNullKeys() {
         var params = new HashMap<String, String>();
         params.put("validKey", "validValue");
         params.put(null, "nullValue");
@@ -122,7 +126,8 @@ public class RequestBuilderTests {
      */
     @Test
     @DisplayName("addQueryParamWithNullKeyDoesNothing")
-    public void addQueryParamWithNullKeyDoesNothing() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void addQueryParamWithNullKeyDoesNothing() {
         var request = Request.builder()
                 .setMethod(HttpMethod.GET)
                 .setUrl("/api/test")
@@ -141,7 +146,8 @@ public class RequestBuilderTests {
      */
     @Test
     @DisplayName("addPathParamAppendsToList")
-    public void addPathParamAppendsToList() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void addPathParamAppendsToList() {
         var request = Request.builder()
                 .setMethod(HttpMethod.GET)
                 .setUrl("/api/users")
@@ -160,7 +166,8 @@ public class RequestBuilderTests {
      */
     @Test
     @DisplayName("addHeaderAddsHeaderToList")
-    public void addHeaderAddsHeaderToList() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void addHeaderAddsHeaderToList() {
         var request = Request.builder()
                 .setMethod(HttpMethod.GET)
                 .setUrl("/api/test")
@@ -183,7 +190,8 @@ public class RequestBuilderTests {
      */
     @Test
     @DisplayName("buildWithContentTypeAddsHeader")
-    public void buildWithContentTypeAddsHeader() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildWithContentTypeAddsHeader() {
         var request = Request.builder()
                 .setMethod(HttpMethod.GET)
                 .setUrl("/api/test")

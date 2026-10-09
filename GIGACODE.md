@@ -50,6 +50,10 @@ vych-spring-toolkit/
 1. **Читай документацию перед изменениями** — начни с `docs/README.md`, `docs/architecture.md` и `docs/guidelines/implementation-guideline.md`
 2. **Соблюдай coding standards** — `docs/coding-standards.md` содержит все конвенции
 3. **Проверяй зависимости между модулями** — logger → http-client → tests (см. `docs/architecture.md`)
+4. **Checkstyle** — при провале сборки из-за checkstyle:
+   - **Правьте код**, чтобы он проходил проверки (warnings и errors блокируют сборку)
+   - **НЕ правьте `checkstyle.xml`** — конфигурация это стандарт проекта, код должен соответствовать стандарту
+   - Подробнее: `docs/coding-standards.md` (раздел 0. Checkstyle)
 
 ### Работа с документацией
 

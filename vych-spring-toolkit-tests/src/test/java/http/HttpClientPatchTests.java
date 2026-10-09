@@ -1,10 +1,10 @@
 package http;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.exceptions.HttpClientException;
 
 import java.util.Map;
 
@@ -24,7 +24,8 @@ public class HttpClientPatchTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки PATCH запроса с JSON телом")
-    public void patchWithJsonBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void patchWithJsonBodyTest() {
         var updates = Map.of("name", "updated", "age", 31);
         var rq = Request.builder()
                 .setUrl(PATCH_CONTROLLER_PATH + PATCH_JSON_ENDPOINT)
@@ -48,7 +49,8 @@ public class HttpClientPatchTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки PATCH запроса с JSON телом Map")
-    public void patchWithMapBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void patchWithMapBodyTest() {
         var updates = Map.of("field", "newValue");
         var rq = Request.builder()
                 .setUrl(PATCH_CONTROLLER_PATH + PATCH_JSON_ENDPOINT)

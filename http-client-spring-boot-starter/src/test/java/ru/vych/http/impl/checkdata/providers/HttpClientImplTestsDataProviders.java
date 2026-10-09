@@ -33,12 +33,14 @@ public class HttpClientImplTestsDataProviders {
     /**
      * Код сервиса, используемый в тестовых конфигурациях.
      */
-    public final static String SERVICE_CODE = "test-client";
+    public static final String SERVICE_CODE = "test-client";
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * Поставщик аргументов для параметризованного теста конструктора:
      * null-аргументы, пустые списки и списки с интерцепторами.
+     *
+     * @return Stream с тестовыми аргументами для параметризованного теста.
      */
     public static Stream<Arguments> interceptorArgsProvider() {
         return Stream.of(
@@ -55,6 +57,8 @@ public class HttpClientImplTestsDataProviders {
      * Поставщик аргументов для параметризованного теста невалидной конфигурации:
      * {@code null} конфигурация, а также конфигурации с {@code null} или отрицательными
      * значениями полей {@code root}, {@code timeout}, {@code version}, {@code cookieHandlerClass}.
+     *
+     * @return Stream с тестовыми аргументами для параметризованного теста.
      */
     public static Stream<Arguments> invalidConfigArgsProvider() {
         return Stream.of(
@@ -100,8 +104,12 @@ public class HttpClientImplTestsDataProviders {
      * Поставщик аргументов для параметризованного теста {@code buildResponseBody}:
      * тела ответа в виде {@code String}, кастомного DTO (маппинг через Jackson)
      * и {@code byte[]}.
+     *
+     * @return Stream с тестовыми данными {@link HttpClientImplBuildResponseCheckData}.
+     * @throws JsonProcessingException если ошибка сериализации тестовых данных.
      */
-    public static Stream<HttpClientImplBuildResponseCheckData> buildResponseArgsProvider() throws JsonProcessingException {
+    public static Stream<HttpClientImplBuildResponseCheckData> buildResponseArgsProvider()
+            throws JsonProcessingException {
         var string = "Hello, world!";
         var dummyDto = new DummyDto("test");
 
@@ -133,6 +141,8 @@ public class HttpClientImplTestsDataProviders {
     /**
      * Поставщик аргументов для параметризованного теста {@code buildResponseHeaders}:
      * карта заголовков с несколькими значениями и пустая карта.
+     *
+     * @return Stream с тестовыми аргументами для параметризованного теста.
      */
     public static Stream<Arguments> buildResponseHeadersArgsProvider() {
         return Stream.of(
@@ -159,8 +169,13 @@ public class HttpClientImplTestsDataProviders {
      * базовые URL (с слэшем и без), кодирование пробелов и кириллицы в пути,
      * path-параметры с специальными символами, query-параметры с дублирующимися ключами
      * и сохранение существующего percent-encoding.
+     *
+     * @return Stream с тестовыми данными {@link HttpClientImplBuildUriCheckData}.
+     * @throws HttpClientInvalidRequestException если ошибка в тестовых данных.
+     * @throws URISyntaxException если ошибка парсинга URI.
      */
-    public static Stream<HttpClientImplBuildUriCheckData> httpClientImplBuildUriArgsProvider() throws HttpClientInvalidRequestException, URISyntaxException {
+    public static Stream<HttpClientImplBuildUriCheckData> httpClientImplBuildUriArgsProvider()
+            throws HttpClientInvalidRequestException, URISyntaxException {
         return Stream.of(
                 new HttpClientImplBuildUriCheckData()
                         .setConfig(new HttpClientConfig(SERVICE_CODE).setRoot("http://localhost:8080"))
@@ -266,8 +281,11 @@ public class HttpClientImplTestsDataProviders {
                                 )))
                                 .build()
                         )
-                        .setExpectedURI(new URI("http://localhost:8080/test/test/%D1%82%D0%B5%D1%81%D1%82" +
-                                "/te%20st/te%2Fst/te%20st?test=%D1%82%D0%B5%D1%81%D1%82&te%20st=te%2Fst&te%20st=te%20%20%2Fst"))
+                        .setExpectedURI(new URI(
+                                "http://localhost:8080/test/test/%D1%82%D0%B5%D1%81%D1%82"
+                                        + "/te%20st/te%2Fst/te%20st"
+                                        + "?test=%D1%82%D0%B5%D1%81%D1%82&te%20st=te%2Fst&te%20st=te%20%20%2Fst"
+                        ))
         );
     }
 }

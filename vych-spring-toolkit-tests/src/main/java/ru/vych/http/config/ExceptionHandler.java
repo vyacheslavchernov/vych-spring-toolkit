@@ -8,8 +8,6 @@ import jakarta.ws.rs.ext.Provider;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.awt.SystemColor.text;
-
 @Provider
 public class ExceptionHandler implements ExceptionMapper<Throwable> {
 

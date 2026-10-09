@@ -1,5 +1,6 @@
 package http;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,7 +8,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import ru.vych.http.impl.HttpClient;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.exceptions.HttpClientException;
 
 import static io.qameta.allure.Allure.step;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,20 +19,29 @@ import static ru.vych.http.impl.common.HttpStatus.FOUND;
 import static ru.vych.http.impl.common.HttpStatus.OK;
 import static ru.vych.http.impl.common.MediaType.TEXT_PLAIN;
 
+/**
+ * Тесты обработки редиректов (3xx).
+ */
 @DisplayName("Тесты обработки редиректов (3xx)")
 public class HttpClientRedirectTests extends BaseHttpTest {
 
+    /** HTTP клиент с политикой следования за редиректами. */
     @Autowired
     @Qualifier(REDIRECT_FOLLOW_CLIENT_SERVICE_CODE)
     protected HttpClient redirectFollowClient;
 
+    /** HTTP клиент без следования за редиректами. */
     @Autowired
     @Qualifier(REDIRECT_NO_FOLLOW_CLIENT_SERVICE_CODE)
     protected HttpClient redirectNoFollowClient;
 
+    /**
+     * Тест редиректа 302 с followRedirects = true.
+     */
     @Test
     @DisplayName("Redirect 302 — followRedirects = true (по умолчанию)")
-    public void redirect302FollowTest() throws HttpClientException {
+    @SneakyThrows
+    public void redirect302FollowTest() {
         step("Отправка GET на " + REDIRECT_CONTROLLER_PATH + TO_HELLO_ENDPOINT + " с followRedirects = true", () -> {
             var rq = Request.builder()
                     .setUrl(REDIRECT_CONTROLLER_PATH + TO_HELLO_ENDPOINT)
@@ -47,10 +56,16 @@ public class HttpClientRedirectTests extends BaseHttpTest {
         });
     }
 
+    /**
+     * Тест редиректа 301 с followRedirects = true.
+     */
     @Test
     @DisplayName("Redirect 301 — followRedirects = true")
-    public void redirect301FollowTest() throws HttpClientException {
-        step("Отправка GET на " + REDIRECT_CONTROLLER_PATH + TO_HELLO_301_ENDPOINT + " с followRedirects = true", () -> {
+    @SneakyThrows
+    public void redirect301FollowTest() {
+        step("Отправка GET на "
+                + REDIRECT_CONTROLLER_PATH + TO_HELLO_301_ENDPOINT
+                + " с followRedirects = true", () -> {
             var rq = Request.builder()
                     .setUrl(REDIRECT_CONTROLLER_PATH + TO_HELLO_301_ENDPOINT)
                     .setMethod(HttpMethod.GET)
@@ -64,9 +79,13 @@ public class HttpClientRedirectTests extends BaseHttpTest {
         });
     }
 
+    /**
+     * Тест редиректа 302 без следования.
+     */
     @Test
     @DisplayName("Redirect 302 — followRedirects = false")
-    public void redirect302NoFollowTest() throws HttpClientException {
+    @SneakyThrows
+    public void redirect302NoFollowTest() {
         step("Отправка GET на " + REDIRECT_CONTROLLER_PATH + TO_HELLO_ENDPOINT + " с followRedirects = false", () -> {
             var rq = Request.builder()
                     .setUrl(REDIRECT_CONTROLLER_PATH + TO_HELLO_ENDPOINT)
@@ -81,10 +100,16 @@ public class HttpClientRedirectTests extends BaseHttpTest {
         });
     }
 
+    /**
+     * Тест защиты от зацикливания редиректов.
+     */
     @Test
     @DisplayName("Redirect loop — защита от зацикливания")
-    public void redirectLoopTest() throws HttpClientException {
-        step("Отправка GET на " + REDIRECT_CONTROLLER_PATH + LOOP_ENDPOINT + " с followRedirects = NORMAL (по умолчанию)", () -> {
+    @SneakyThrows
+    public void redirectLoopTest() {
+        step("Отправка GET на "
+                + REDIRECT_CONTROLLER_PATH + LOOP_ENDPOINT
+                + " с followRedirects = NORMAL (по умолчанию)", () -> {
             var rq = Request.builder()
                     .setUrl(REDIRECT_CONTROLLER_PATH + LOOP_ENDPOINT)
                     .setMethod(HttpMethod.GET)
@@ -104,9 +129,13 @@ public class HttpClientRedirectTests extends BaseHttpTest {
         });
     }
 
+    /**
+     * Тест редиректа на внешний домен.
+     */
     @Test
     @DisplayName("Redirect на внешний домен — followRedirects = true")
-    public void externalRedirectTest() throws HttpClientException {
+    @SneakyThrows
+    public void externalRedirectTest() {
         step("Отправка GET на " + REDIRECT_CONTROLLER_PATH + EXTERNAL_ENDPOINT + " с followRedirects = true", () -> {
             var rq = Request.builder()
                     .setUrl(REDIRECT_CONTROLLER_PATH + EXTERNAL_ENDPOINT)
@@ -131,9 +160,13 @@ public class HttpClientRedirectTests extends BaseHttpTest {
         });
     }
 
+    /**
+     * Тест редиректа с изменением метода (POST -> GET).
+     */
     @Test
     @DisplayName("Redirect с изменением метода (POST → GET)")
-    public void redirectPostToGetTest() throws HttpClientException {
+    @SneakyThrows
+    public void redirectPostToGetTest() {
         step("Отправка POST на эндпоинт, который возвращает 302", () -> {
             var rq = Request.builder()
                     .setUrl(REDIRECT_CONTROLLER_PATH + POST_REDIRECT_ENDPOINT)

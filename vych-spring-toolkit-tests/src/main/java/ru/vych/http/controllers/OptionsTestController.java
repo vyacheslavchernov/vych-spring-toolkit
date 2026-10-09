@@ -14,13 +14,18 @@ import static ru.vych.http.controllers.OptionsTestController.OPTIONS_CONTROLLER_
  */
 @Path(OPTIONS_CONTROLLER_PATH)
 public class OptionsTestController {
+
+    /** Путь контроллера. */
     public static final String OPTIONS_CONTROLLER_PATH = "/optionsTest";
 
+    /** Эндпоинт для простого OPTIONS запроса. */
     public static final String OPTIONS_SIMPLE_ENDPOINT = "/simple";
+    /** Эндпоинт для OPTIONS запроса с телом. */
     public static final String OPTIONS_WITH_BODY_ENDPOINT = "/withBody";
 
     /**
      * OPTIONS запрос — возвращает поддерживаемые методы.
+     * @return ответ с поддерживаемыми методами
      */
     @OPTIONS
     @Path(OPTIONS_SIMPLE_ENDPOINT)
@@ -37,6 +42,8 @@ public class OptionsTestController {
 
     /**
      * OPTIONS запрос с телом — возвращает информацию о ресурсе.
+     * @param body тело запроса
+     * @return ответ с информацией о ресурсе
      */
     @OPTIONS
     @Path(OPTIONS_WITH_BODY_ENDPOINT)

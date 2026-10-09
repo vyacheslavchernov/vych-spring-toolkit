@@ -10,11 +10,19 @@ import ru.vych.http.controllers.*;
 
 import java.net.URI;
 
+/**
+ * Конфигурация тестового HTTP сервера.
+ */
 @Configuration
 public class TestServerConfiguration {
+
+    /** URI тестового сервера. */
     public static String TEST_SERVER_URI = "http://localhost:9090";
 
-
+    /**
+     * Создает и настраивает тестовый HTTP сервер.
+     * @return настроенный HttpServer
+     */
     @Bean(initMethod = "start", destroyMethod = "shutdown")
     public HttpServer testServer() {
 

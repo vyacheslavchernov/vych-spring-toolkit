@@ -2,6 +2,7 @@ package ru.vych.http.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,7 +12,6 @@ import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.DummyDto;
 import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.entities.Response;
-import ru.vych.http.impl.exceptions.HttpClientInvalidRequestException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -99,11 +99,14 @@ public class ResponseTests {
      * Для null, byte.class и byte[].class метод должен возвращать {@code null}.
      * Для остальных типов — корректно приводить тело к указанному классу.
      * </p>
+     *
+     * @param checkData тестовые данные для проверки каста тела ответа.
      */
     @ParameterizedTest
     @MethodSource("bodyCastingArgsProvider")
     @DisplayName("Тест каста тела ответа")
-    public void bodyCastingTest(ResponseBodyCastingCheckData checkData) throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void bodyCastingTest(ResponseBodyCastingCheckData checkData) {
         var response = new Response(
                 "uuid",
                 Request.builder()

@@ -1,5 +1,6 @@
 package ru.vych.http.impl;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -8,12 +9,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.common.CookiesPolicies;
 import ru.vych.http.impl.entities.CookieEntry;
-import ru.vych.http.impl.exceptions.HttpClientException;
 import ru.vych.logger.impl.LogService;
 
 import java.net.HttpCookie;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +33,8 @@ class HttpClientCookiePolicyTests {
      */
     @Test
     @DisplayName("ACCEPT_ALL принимает все cookies")
-    void acceptAllAcceptsAllCookies() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void acceptAllAcceptsAllCookies() {
         HttpClientConfig config = new HttpClientConfig("TestService")
                 .setRoot("http://localhost:8080")
                 .setCookiePolicy(CookiesPolicies.ACCEPT_ALL);
@@ -65,7 +65,8 @@ class HttpClientCookiePolicyTests {
      */
     @Test
     @DisplayName("ACCEPT_NONE отклоняет все cookies")
-    void acceptNoneRejectsAllCookies() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void acceptNoneRejectsAllCookies() {
         HttpClientConfig config = new HttpClientConfig("TestService")
                 .setRoot("http://localhost:8080")
                 .setCookiePolicy(CookiesPolicies.ACCEPT_NONE);
@@ -97,7 +98,8 @@ class HttpClientCookiePolicyTests {
      */
     @Test
     @DisplayName("ACCEPT_ORIGINAL_SERVER принимает только cookies от root host")
-    void acceptOriginalServerAcceptsOnlyRootHost() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void acceptOriginalServerAcceptsOnlyRootHost() {
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://api.example.com"), new HttpCookie("root_cookie", "value"))
         );
@@ -121,7 +123,8 @@ class HttpClientCookiePolicyTests {
      */
     @Test
     @DisplayName("getCookies возвращает копию списка")
-    void getCookiesReturnsCopy() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void getCookiesReturnsCopy() {
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://example.com"), new HttpCookie("test", "value"))
         );

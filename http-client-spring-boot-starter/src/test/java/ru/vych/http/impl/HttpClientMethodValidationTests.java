@@ -1,5 +1,6 @@
 package ru.vych.http.impl;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.http.impl.common.HttpMethod;
@@ -47,7 +48,8 @@ public class HttpClientMethodValidationTests {
      */
     @Test
     @DisplayName("buildPutWithPayloadWithContentTypeSucceeds")
-    public void buildPutWithPayloadWithContentTypeSucceeds() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildPutWithPayloadWithContentTypeSucceeds() {
         var request = Request.builder()
                 .setMethod(HttpMethod.PUT)
                 .setUrl("/api/test")
@@ -84,7 +86,8 @@ public class HttpClientMethodValidationTests {
      */
     @Test
     @DisplayName("buildDeleteWithPayloadWithContentTypeSucceeds")
-    public void buildDeleteWithPayloadWithContentTypeSucceeds() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildDeleteWithPayloadWithContentTypeSucceeds() {
         var request = Request.builder()
                 .setMethod(HttpMethod.DELETE)
                 .setUrl("/api/test")
@@ -121,7 +124,8 @@ public class HttpClientMethodValidationTests {
      */
     @Test
     @DisplayName("buildPatchWithPayloadWithContentTypeSucceeds")
-    public void buildPatchWithPayloadWithContentTypeSucceeds() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildPatchWithPayloadWithContentTypeSucceeds() {
         var request = Request.builder()
                 .setMethod(HttpMethod.PATCH)
                 .setUrl("/api/test")
@@ -144,7 +148,8 @@ public class HttpClientMethodValidationTests {
      */
     @Test
     @DisplayName("buildHeadWithPayloadSucceedsBecauseHeadIgnoresBody")
-    public void buildHeadWithPayloadSucceedsBecauseHeadIgnoresBody() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildHeadWithPayloadSucceedsBecauseHeadIgnoresBody() {
         var request = Request.builder()
                 .setMethod(HttpMethod.HEAD)
                 .setUrl("/api/test")
@@ -180,7 +185,8 @@ public class HttpClientMethodValidationTests {
      */
     @Test
     @DisplayName("buildOptionsWithPayloadWithContentTypeSucceeds")
-    public void buildOptionsWithPayloadWithContentTypeSucceeds() throws HttpClientInvalidRequestException {
+    @SneakyThrows
+    public void buildOptionsWithPayloadWithContentTypeSucceeds() {
         var request = Request.builder()
                 .setMethod(HttpMethod.OPTIONS)
                 .setUrl("/api/test")

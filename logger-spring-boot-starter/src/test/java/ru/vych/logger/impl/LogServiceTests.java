@@ -237,7 +237,7 @@ class LogServiceTests {
     /**
      * Вспомогательный аппендер, который просто собирает события для проверки.
      */
-    private static class CollectingAppender implements LogAppender {
+    private static final class CollectingAppender implements LogAppender {
         private final List<LogEvent> capturedEvents = new ArrayList<>();
 
         @Override

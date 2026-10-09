@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 scope: architecture
 ---
 
@@ -48,6 +48,24 @@ mvn -pl http-client-spring-boot-starter test
 # Интеграционные тесты
 mvn -pl vych-spring-toolkit-tests test
 ```
+
+## Проверки кода
+
+```shell
+# Checkstyle — весь проект (запускается автоматически на фазе validate)
+mvn checkstyle:check
+
+# Checkstyle — конкретный модуль
+mvn -pl logger-spring-boot-starter checkstyle:check
+mvn -pl http-client-spring-boot-starter checkstyle:check
+mvn -pl vych-spring-toolkit-tests checkstyle:check
+
+# Checkstyle — с выводом отчёта в XML/HTML
+mvn checkstyle:checkstyle -Dcheckstyle.output.format=xml
+mvn checkstyle:checkstyle -Dcheckstyle.output.format=html
+```
+
+> Checkstyle настроен в корневом `pom.xml` с параметрами `failsOnError=true` и `includeTestSourceDirectory=true`. Ошибки checkstyle блокируют сборку на фазе `validate`.
 
 ## Публикация в GitHub Packages
 

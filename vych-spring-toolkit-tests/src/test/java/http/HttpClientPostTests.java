@@ -1,12 +1,12 @@
 package http;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.common.RandomUtils;
 import ru.vych.http.entities.DummyDto;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.exceptions.HttpClientException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -18,11 +18,19 @@ import static ru.vych.http.controllers.PostTestController.*;
 import static ru.vych.http.impl.common.HttpStatus.OK;
 import static ru.vych.http.impl.common.MediaType.*;
 
+/**
+ * Тесты отправки POST запросов.
+ */
 @DisplayName("Тесты отправки POST запросов")
 public class HttpClientPostTests extends BaseHttpTest {
+
+    /**
+     * Тест отправки POST запроса с пустым телом.
+     */
     @Test
     @DisplayName("Тест отправки POST запроса с пустым телом")
-    public void emptyPostTest() throws HttpClientException {
+    @SneakyThrows
+    public void emptyPostTest() {
         var rq = Request.builder()
                 .setUrl(POST_CONTROLLER_PATH + EMPTY_POST_ENDPOINT)
                 .setMethod(HttpMethod.POST)
@@ -32,9 +40,13 @@ public class HttpClientPostTests extends BaseHttpTest {
         bodyEqualsTo(rs.getBody(), null);
     }
 
+    /**
+     * Тест отправки POST запроса с телом в виде строки.
+     */
     @Test
     @DisplayName("Тест отправки POST запроса с телом в виде строки")
-    public void stringPostTest() throws HttpClientException {
+    @SneakyThrows
+    public void stringPostTest() {
         var uuid = UUID.randomUUID().toString();
         var rq = Request.builder()
                 .setUrl(POST_CONTROLLER_PATH + STRING_POST_ENDPOINT)
@@ -48,9 +60,13 @@ public class HttpClientPostTests extends BaseHttpTest {
         bodyEqualsTo(rs.getBody(), uuid);
     }
 
+    /**
+     * Тест отправки POST запроса с телом в виде массива байт.
+     */
     @Test
     @DisplayName("Тест отправки POST запроса с телом в виде массива байт")
-    public void bytesPostTest() throws HttpClientException {
+    @SneakyThrows
+    public void bytesPostTest() {
         var bytes = UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
         var rq = Request.builder()
                 .setUrl(POST_CONTROLLER_PATH + BYTES_POST_ENDPOINT)
@@ -64,6 +80,9 @@ public class HttpClientPostTests extends BaseHttpTest {
         bodyContainsExactlyBytes(rs.getRawBytes(), bytes);
     }
 
+    /**
+     * Тест отправки POST запроса с телом в виде коллекций.
+     */
     @Test
     @DisplayName("Тест отправки POST запроса с телом в виде коллекций")
     public void collectionPostTest() {
@@ -93,9 +112,13 @@ public class HttpClientPostTests extends BaseHttpTest {
         });
     }
 
+    /**
+     * Тест отправки POST запроса с телом в DTO.
+     */
     @Test
     @DisplayName("Тест отправки POST запроса с телом в DTO")
-    public void dtoPostTest() throws HttpClientException {
+    @SneakyThrows
+    public void dtoPostTest() {
         var dummy = DummyDto.getDummy();
         var rq = Request.builder()
                 .setUrl(POST_CONTROLLER_PATH + JSON_POST_ENDPOINT)

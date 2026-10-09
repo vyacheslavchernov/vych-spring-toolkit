@@ -14,9 +14,13 @@ import static ru.vych.http.controllers.PatchTestController.PATCH_CONTROLLER_PATH
  */
 @Path(PATCH_CONTROLLER_PATH)
 public class PatchTestController {
+
+    /** Путь контроллера. */
     public static final String PATCH_CONTROLLER_PATH = "/patchTest";
 
+    /** Эндпоинт для PATCH с JSON телом. */
     public static final String PATCH_JSON_ENDPOINT = "/json";
+    /** Эндпоинт для PATCH с path параметром. */
     public static final String PATCH_PATH_ENDPOINT = "/{id}";
 
     /**
@@ -29,6 +33,8 @@ public class PatchTestController {
 
     /**
      * PATCH запрос с JSON телом — эхо тела.
+     * @param body тело запроса
+     * @return ответ с эхом тела
      */
     @PATCH
     @Path(PATCH_JSON_ENDPOINT)
@@ -40,6 +46,9 @@ public class PatchTestController {
 
     /**
      * PATCH запрос с path параметром и JSON телом — возвращает патченные данные.
+     * @param id идентификатор ресурса
+     * @param body тело запроса
+     * @return результат патча
      */
     @PATCH
     @Path(PATCH_PATH_ENDPOINT)

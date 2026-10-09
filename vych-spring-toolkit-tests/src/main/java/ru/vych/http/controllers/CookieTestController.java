@@ -16,17 +16,30 @@ import java.util.Map;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
+/**
+ * JAX-RS контроллер для тестирования работы с cookies.
+ */
 @Path("/cookieTest")
 public class CookieTestController {
 
+    /** Имя тестового cookie. */
     public static final String COOKIE_NAME = "test_cookie";
+    /** Значение тестового cookie. */
     public static final String COOKIE_VALUE = "test_value_123";
 
+    /** Путь для тестов cookies. */
     public static final String COOKIE_TEST_PATH = "/cookieTest";
+    /** Эндпоинт для установки cookie. */
     public static final String COOKIE_TEST_SET_ENDPOINT = "/set";
+    /** Эндпоинт для эха cookie. */
     public static final String COOKIE_TEST_ECHO_ENDPOINT = "/echo";
+    /** Эндпоинт для проверки cookie. */
     public static final String COOKIE_TEST_CHECK_ENDPOINT = "/check";
 
+    /**
+     * Устанавливает тестовый cookie в ответ.
+     * @return ответ с установленным cookie
+     */
     @GET
     @Path("/set")
     @Produces(TEXT_PLAIN)
@@ -40,6 +53,11 @@ public class CookieTestController {
                 .build();
     }
 
+    /**
+     * Возвращает полученные cookies в виде JSON.
+     * @param httpHeaders заголовки запроса
+     * @return JSON с полученными cookies
+     */
     @GET
     @Path("/echo")
     @Produces(APPLICATION_JSON)
@@ -64,6 +82,11 @@ public class CookieTestController {
         return Response.ok(Map.of("cookies", result)).build();
     }
 
+    /**
+     * Проверяет наличие тестового cookie в запросе.
+     * @param httpHeaders заголовки запроса
+     * @return JSON с результатом проверки
+     */
     @GET
     @Path("/check")
     @Produces(APPLICATION_JSON)
