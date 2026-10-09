@@ -71,7 +71,9 @@ public class LogEvent {
      * @param entities    дополнительные объекты
      * @return новый экземпляр {@link LogEvent}
      */
-    public static LogEvent create(String serviceCode, String uuid, LoggingLevel loggingLevel, String message, Object... entities) {
+    public static LogEvent create(String serviceCode, String uuid,
+                                  LoggingLevel loggingLevel, String message,
+                                  Object... entities) {
         return new LogEvent(
                 serviceCode,
                 uuid,

@@ -1,5 +1,6 @@
 package ru.vych.http.impl;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,12 +9,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.entities.CookieEntry;
-import ru.vych.http.impl.exceptions.HttpClientException;
 import ru.vych.logger.impl.LogService;
 
 import java.net.HttpCookie;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +42,8 @@ class HttpClientCookieStoreTests {
      */
     @Test
     @DisplayName("Проверка работы cookie store с дефолтными cookies")
-    public void cookieStoreWithDefaultCookies() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    public void cookieStoreWithDefaultCookies() {
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://example1.com"), new HttpCookie("test1", "test1")),
                 new CookieEntry(new URI("https://example2.com"), new HttpCookie("test2", "test2")),
@@ -82,7 +82,8 @@ class HttpClientCookieStoreTests {
      */
     @Test
     @DisplayName("Проверка изоляции cookies между клиентами")
-    public void cookieIsolationBetweenClients() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    public void cookieIsolationBetweenClients() {
         List<CookieEntry> cookies1 = List.of(
                 new CookieEntry(new URI("https://example.com"), new HttpCookie("client", "1"))
         );
@@ -115,7 +116,8 @@ class HttpClientCookieStoreTests {
      */
     @Test
     @DisplayName("Проверка очистки cookies")
-    public void clearCookies() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    public void clearCookies() {
         List<CookieEntry> cookies = List.of(
                 new CookieEntry(new URI("https://example.com"), new HttpCookie("test", "value"))
         );
@@ -139,7 +141,8 @@ class HttpClientCookieStoreTests {
      */
     @Test
     @DisplayName("Проверка получения всего хранилища cookies")
-    public void getAllCookies() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    public void getAllCookies() {
         List<CookieEntry> cookies = List.of(
                 new CookieEntry(new URI("https://example1.com"), new HttpCookie("a", "1")),
                 new CookieEntry(new URI("https://example2.com"), new HttpCookie("b", "2"))
@@ -171,7 +174,8 @@ class HttpClientCookieStoreTests {
      */
     @Test
     @DisplayName("getAllCookies возвращает неизменяемую карту")
-    public void getAllCookiesIsImmutable() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    public void getAllCookiesIsImmutable() {
         List<CookieEntry> cookies = List.of(
                 new CookieEntry(new URI("https://example.com"), new HttpCookie("test", "value"))
         );
@@ -192,7 +196,8 @@ class HttpClientCookieStoreTests {
      */
     @Test
     @DisplayName("getAllCookies пуст для клиента без cookies")
-    public void getAllCookiesEmptyWhenNoCookies() throws HttpClientException {
+    @SneakyThrows
+    public void getAllCookiesEmptyWhenNoCookies() {
         var client = new HttpClientImpl(
                 new HttpClientConfig("TestClient").setCookies(List.of()),
                 logService, null, null

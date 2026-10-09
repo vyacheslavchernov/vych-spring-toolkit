@@ -32,7 +32,8 @@ public interface HttpClient {
      * <ol>
      *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
      *   <li>Формируется и отправляется HTTP-запрос через {@code java.net.http.HttpClient}.</li>
-     *   <li>Ответ парсится: body десериализуется в {@link Request#getResponseClass()} (если указан) или возвращается как raw-байты.</li>
+     *   <li>Ответ парсится: body десериализуется в {@link Request#getResponseClass()}
+     *       (если указан) или возвращается как raw-байты.</li>
      *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
      * </ol>
      * </p>

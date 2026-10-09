@@ -1,10 +1,10 @@
 package http;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.exceptions.HttpClientException;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +26,8 @@ public class HttpClientOptionsTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки OPTIONS запроса без тела")
-    public void optionsWithoutBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void optionsWithoutBodyTest() {
         var rq = Request.builder()
                 .setUrl(OPTIONS_CONTROLLER_PATH + OPTIONS_SIMPLE_ENDPOINT)
                 .setMethod(HttpMethod.OPTIONS)
@@ -40,7 +41,8 @@ public class HttpClientOptionsTests extends BaseHttpTest {
         Map<String, Object> result = rs.getCastedBody();
         step("Проверка allowedMethods", () -> {
             // allowedMethods — это List<String>, bodyContainsEntry не работает с List
-            bodyEqualsTo(result.get("allowedMethods"), List.of("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"));
+            bodyEqualsTo(result.get("allowedMethods"),
+                    List.of("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"));
         });
     }
 
@@ -49,7 +51,8 @@ public class HttpClientOptionsTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки OPTIONS запроса с телом")
-    public void optionsWithBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void optionsWithBodyTest() {
         var payload = Map.of("resource", "users");
         var rq = Request.builder()
                 .setUrl(OPTIONS_CONTROLLER_PATH + OPTIONS_WITH_BODY_ENDPOINT)

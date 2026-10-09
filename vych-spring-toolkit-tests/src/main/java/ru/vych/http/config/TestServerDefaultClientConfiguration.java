@@ -15,10 +15,24 @@ import java.util.Map;
 
 import static ru.vych.http.config.TestServerConfiguration.TEST_SERVER_URI;
 
+/**
+ * Конфигурация HTTP клиента по умолчанию.
+ */
 @Configuration
 public class TestServerDefaultClientConfiguration {
+
+    /** Сервисный код клиента по умолчанию. */
     public static final String DEFAULT_CLIENT_SERVICE_CODE = "TestServerHttpClient";
 
+    /**
+     * Создает HTTP клиент по умолчанию.
+     * @param builder билдер HTTP клиента
+     * @param logService сервис логирования
+     * @param requestInterceptors список перехватчиков запросов
+     * @param responseInterceptors список перехватчиков ответов
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Primary
     @Bean(name = DEFAULT_CLIENT_SERVICE_CODE)
     public HttpClient defaultClient(

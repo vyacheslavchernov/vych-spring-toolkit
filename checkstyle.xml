@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+          "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+          "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+
+    <!-- Длина строки не более 120 символов -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+    </module>
+
+    <!-- Максимальная длина файла -->
+    <module name="FileLength">
+        <property name="max" value="1000"/>
+    </module>
+
+    <!-- Запрет public final static (должно быть static final) -->
+    <module name="RegexpSingleline">
+        <property name="format" value="public\s+final\s+static"/>
+        <property name="message" value="Use 'static final' instead of 'public final static'"/>
+    </module>
+
+    <!-- Проверки на уровне AST -->
+    <module name="TreeWalker">
+        <!-- Запрет redundant импортов -->
+        <module name="RedundantImport"/>
+
+        <!-- Проверка unused импортов -->
+        <module name="UnusedImports"/>
+
+        <!-- Javadoc: каждый класс должен иметь документацию -->
+        <module name="JavadocType">
+            <property name="scope" value="public"/>
+        </module>
+
+        <!-- Javadoc: требование наличия javadoc на каждом публичном/protected методе -->
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="protected"/>
+            <property name="allowMissingPropertyJavadoc" value="false"/>
+        </module>
+
+        <!-- Javadoc: проверка содержимого javadoc метода (param, return, throws) -->
+        <module name="JavadocMethod">
+            <property name="accessModifiers" value="public, protected"/>
+            <property name="allowMissingParamTags" value="false"/>
+            <property name="allowMissingReturnTag" value="false"/>
+            <property name="validateThrows" value="true"/>
+        </module>
+
+        <!-- Javadoc: публичные поля должны иметь документацию -->
+        <module name="JavadocVariable">
+            <property name="scope" value="public"/>
+        </module>
+
+        <!-- Обязательный @Override на методах интерфейсов/родительских классов -->
+        <module name="MissingOverride"/>
+
+        <!-- Запрет пустых блоков catch -->
+        <module name="EmptyCatchBlock"/>
+
+        <!-- Проверка множественных объявлений переменных -->
+        <module name="MultipleVariableDeclarations"/>
+
+        <!-- Проверка StringLiteralEquality -->
+        <module name="StringLiteralEquality"/>
+
+        <!-- Имена полей: camelCase -->
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!-- Имена параметров: camelCase -->
+        <module name="ParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!-- Имена локальных переменных: camelCase -->
+        <module name="LocalVariableName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <!-- Имена констант: UPPER_SNAKE_CASE -->
+        <module name="ConstantName">
+            <property name="format" value="^[A-Z][A-Z0-9_]*$"/>
+        </module>
+
+        <!-- Запрет лишнего super(); без аргументов -->
+        <module name="AvoidNoArgumentSuperConstructorCall"/>
+
+        <!-- Максимум 5 параметров на метод -->
+        <module name="ParameterNumber">
+            <property name="max" value="5"/>
+        </module>
+
+        <!-- Утилитные классы должны быть final -->
+        <module name="FinalClass"/>
+
+        <!-- equals и hashCode должны быть парой -->
+        <module name="EqualsHashCode"/>
+
+        <!-- @Deprecated должен сопровождаться Javadoc @deprecated -->
+        <module name="MissingDeprecated"/>
+
+        <!-- SuppressWarnings поддержка -->
+        <module name="SuppressWarningsHolder"/>
+
+        <!-- Запрет лишних скобок в return/assign/conditions -->
+        <module name="UnnecessaryParentheses"/>
+
+        <!-- Fall-through в switch (case без break/return/throw) -->
+        <module name="FallThrough"/>
+
+        <!-- Запрет внешних логгеров (SLF4J, Logback, java.util.logging) -->
+        <module name="IllegalImport">
+            <property name="regexp" value="true"/>
+            <property name="illegalClasses" value="org\.slf4j\..*|ch\.qos\.logback\..*|java\.util\.logging\..*"/>
+        </module>
+    </module>
+
+    <!-- SuppressWarnings фильтр -->
+    <module name="SuppressWarningsFilter"/>
+</module>

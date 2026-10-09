@@ -94,7 +94,10 @@ class HttpClientLoggerTests {
     @ParameterizedTest
     @MethodSource("logWithForcedArgsProvider")
     @DisplayName("info() с флагом forced")
-    public void infoWithForced(boolean logRequests, boolean forced, boolean shouldCallLogService) throws HttpClientConfigurationException {
+    public void infoWithForced(
+            boolean logRequests, boolean forced,
+            boolean shouldCallLogService
+    ) throws HttpClientConfigurationException {
         config.setLogRequests(logRequests);
         var httpClientLogger = new HttpClientLogger(config, logService);
 
@@ -143,7 +146,10 @@ class HttpClientLoggerTests {
     @ParameterizedTest
     @MethodSource("logWithForcedArgsProvider")
     @DisplayName("debug() с флагом forced")
-    public void debugWithForced(boolean logRequests, boolean forced, boolean shouldCallLogService) throws HttpClientConfigurationException {
+    public void debugWithForced(
+            boolean logRequests, boolean forced,
+            boolean shouldCallLogService
+    ) throws HttpClientConfigurationException {
         config.setLogRequests(logRequests);
         var httpClientLogger = new HttpClientLogger(config, logService);
 

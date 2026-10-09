@@ -11,12 +11,24 @@ import java.util.List;
 
 import static ru.vych.http.config.TestServerConfiguration.TEST_SERVER_URI;
 
+/**
+ * Конфигурация HTTP клиентов для тестирования редиректов.
+ */
 @Configuration
 public class TestServerRedirectClientConfiguration {
 
+    /** Сервисный код клиента с followRedirects = true. */
     public static final String REDIRECT_FOLLOW_CLIENT_SERVICE_CODE = "RedirectFollowClient";
+    /** Сервисный код клиента с followRedirects = false. */
     public static final String REDIRECT_NO_FOLLOW_CLIENT_SERVICE_CODE = "RedirectNoFollowClient";
 
+    /**
+     * Создает HTTP клиент с политикой следования за редиректами.
+     * @param builder билдер HTTP клиента
+     * @param logService сервис логирования
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Bean(name = REDIRECT_FOLLOW_CLIENT_SERVICE_CODE)
     public HttpClient redirectFollowClient(
             HttpClientBuilder builder, LogService logService
@@ -28,6 +40,13 @@ public class TestServerRedirectClientConfiguration {
         return builder.build(config, logService, List.of(), List.of());
     }
 
+    /**
+     * Создает HTTP клиент без следования за редиректами.
+     * @param builder билдер HTTP клиента
+     * @param logService сервис логирования
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Bean(name = REDIRECT_NO_FOLLOW_CLIENT_SERVICE_CODE)
     public HttpClient redirectNoFollowClient(
             HttpClientBuilder builder, LogService logService

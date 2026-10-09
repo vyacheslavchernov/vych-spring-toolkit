@@ -105,6 +105,22 @@ mvn test
 mvn -pl {module-name} test
 ```
 
+### Шаг 7.1: Проверка coding standards
+
+**ВЫЗОВИ `project-coding-standards-checker`:**
+
+```
+project-coding-standards-checker: проверь код на соответствие coding standards для {spec-name}
+```
+
+или для конкретных файлов:
+
+```
+project-coding-standards-checker: проверь файлы {file1, file2} на соответствие coding standards
+```
+
+Проверь все нарушения и исправь их перед переходом к шагу 8.
+
 ### Шаг 8: Вызов doc-sync
 
 ```
@@ -150,6 +166,15 @@ spec-audit: аудит спецификаций для {spec-id}
 
 ### Шаг 4–10: Те же, что для новой реализации
 
+## Чек-лист перед вызовом project-coding-standards-checker
+
+- [ ] Код соответствует spec (проверь вручную)
+- [ ] Все значимые требования покрыты тестами
+- [ ] Тесты проходят (`mvn test`)
+- [ ] Сборка проходит (`mvn clean compile`)
+- [ ] Нет NEEDS_CLARIFICATION (или они отмечены)
+- [ ] Соблюдена архитектура модулей
+
 ## Чек-лист перед вызовом doc-sync
 
 - [ ] Код соответствует spec (проверь вручную)
@@ -157,7 +182,8 @@ spec-audit: аудит спецификаций для {spec-id}
 - [ ] Тесты проходят (`mvn test`)
 - [ ] Сборка проходит (`mvn clean compile`)
 - [ ] Нет NEEDS_CLARIFICATION (или они отмечены)
-- [ ] Соблюдены coding standards
+- [ ] **Coding standards проверены через `project-coding-standards-checker`**
+- [ ] Нарушения исправлены
 - [ ] Соблюдена архитектура модулей
 
 ## Чек-лист перед предоставлением решения пользователю

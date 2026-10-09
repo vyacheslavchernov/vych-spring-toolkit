@@ -1,5 +1,6 @@
 package ru.vych.logger.impl.appenders;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Аппендер по умолчанию включён")
-    void appenderEnabledByDefault() throws LoggerAppenderException {
+    @SneakyThrows
+    void appenderEnabledByDefault() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -51,7 +53,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Фильтрация по уровню -- пропускает события ниже минимального")
-    void levelFilteringSkipsLowerEvents() throws LoggerAppenderException {
+    @SneakyThrows
+    void levelFilteringSkipsLowerEvents() {
         var appender = new ConsoleAppender(
                 LoggingLevel.WARN,
                 false, false, false, false, null
@@ -79,7 +82,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("ERROR выводится в System.err, остальные -- в System.out")
-    void errorStreamSeparation() throws LoggerAppenderException {
+    @SneakyThrows
+    void errorStreamSeparation() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -104,7 +108,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Формат вывода включает timestamp, level, serviceCode, message")
-    void outputFormat() throws LoggerAppenderException {
+    @SneakyThrows
+    void outputFormat() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -130,7 +135,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("JSON entities сериализуются при includeEntities=true")
-    void jsonEntitiesSerialization() throws LoggerAppenderException {
+    @SneakyThrows
+    void jsonEntitiesSerialization() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, false, false, false, null
@@ -157,7 +163,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Pretty entities добавляют отступы в JSON")
-    void prettyEntities() throws LoggerAppenderException {
+    @SneakyThrows
+    void prettyEntities() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, true, false, false, null
@@ -181,7 +188,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Отключение entities -- не выводит их")
-    void entitiesDisabled() throws LoggerAppenderException {
+    @SneakyThrows
+    void entitiesDisabled() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -206,7 +214,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("dimEntities делает вывод менее ярким (добавляет ANSI codes)")
-    void dimEntities() throws LoggerAppenderException {
+    @SneakyThrows
+    void dimEntities() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, false, false, true, null
@@ -231,7 +240,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("dimEntities работает только с includeEntities")
-    void dimEntitiesOnlyWithIncludeEntities() throws LoggerAppenderException {
+    @SneakyThrows
+    void dimEntitiesOnlyWithIncludeEntities() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, true, null
@@ -255,7 +265,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("getServiceCode возвращает 'ConsoleAppender'")
-    void getServiceCodeReturnsCorrectCode() throws LoggerAppenderException {
+    @SneakyThrows
+    void getServiceCodeReturnsCorrectCode() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -268,7 +279,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("ANSI цвета для уровней -- DEBUG=White, INFO=Blue, WARN=Yellow, ERROR=Red")
-    void ansiColorsByLevel() throws LoggerAppenderException {
+    @SneakyThrows
+    void ansiColorsByLevel() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, true, false, null
@@ -294,7 +306,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("ANSI цвета применяются только к LEVEL, не ко всему сообщению")
-    void ansiColorsOnlyToLevel() throws LoggerAppenderException {
+    @SneakyThrows
+    void ansiColorsOnlyToLevel() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, true, false, null
@@ -312,7 +325,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Ошибка сериализации -- бросает LoggerAppenderException")
-    void serializationErrorThrowsLoggerAppenderException() throws LoggerAppenderException {
+    @SneakyThrows
+    void serializationErrorThrowsLoggerAppenderException() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, false, false, false, null
@@ -335,7 +349,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Multiple append -- добавляет несколько записей")
-    void multipleAppends() throws LoggerAppenderException {
+    @SneakyThrows
+    void multipleAppends() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -356,7 +371,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Отключённый аппендер -- не выводит ничего")
-    void appenderDisabled() throws LoggerAppenderException {
+    @SneakyThrows
+    void appenderDisabled() {
         var appender = new ConsoleAppender(
                 LoggingLevel.WARN,
                 false, false, false, false, null
@@ -376,7 +392,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Сообщение без текста -- пустая строка допустима")
-    void messageWithoutText() throws LoggerAppenderException {
+    @SneakyThrows
+    void messageWithoutText() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -394,7 +411,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Пустой список entities -- не выбрасывает исключение")
-    void emptyEntitiesList() throws LoggerAppenderException {
+    @SneakyThrows
+    void emptyEntitiesList() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, false, false, false, null
@@ -410,7 +428,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Формат по умолчанию -- при formatPattern=null")
-    void defaultFormatWhenPatternIsNull() throws LoggerAppenderException {
+    @SneakyThrows
+    void defaultFormatWhenPatternIsNull() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, null
@@ -429,7 +448,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Формат по умолчанию -- при formatPattern=пустая строка")
-    void defaultFormatWhenPatternIsEmpty() throws LoggerAppenderException {
+    @SneakyThrows
+    void defaultFormatWhenPatternIsEmpty() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false, ""
@@ -448,7 +468,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- подставляет все плейсхолдеры")
-    void customFormatterWithAllPlaceholders() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterWithAllPlaceholders() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false,
@@ -475,7 +496,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- кастомный порядок плейсхолдеров")
-    void customFormatterCustomOrder() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterCustomOrder() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false,
@@ -495,7 +517,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- фиксированная ширина для %level (5 символов)")
-    void customFormatterLevelFixedWidth() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterLevelFixedWidth() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false,
@@ -524,7 +547,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- фиксированная ширина для %serviceCode (30 символов)")
-    void customFormatterServiceCodeFixedWidth() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterServiceCodeFixedWidth() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false,
@@ -548,7 +572,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- фиксированная ширина только для первого вхождения %level")
-    void customFormatterLevelFixedWidthOnlyFirstOccurrence() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterLevelFixedWidthOnlyFirstOccurrence() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false,
@@ -567,7 +592,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- неверный формат использует формат по умолчанию")
-    void customFormatterInvalidUsesDefault() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterInvalidUsesDefault() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, false, false,
@@ -587,7 +613,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- entities подставляются через %entity")
-    void customFormatterWithEntitiesPlaceholder() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterWithEntitiesPlaceholder() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, false, false, false,
@@ -615,7 +642,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- dimEntities работает с %entity")
-    void customFormatterDimEntities() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterDimEntities() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, false, false, true,
@@ -640,7 +668,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- ANSI цвета применяются к первому вхождению %level")
-    void customFormatterAnsiColorsToFirstLevel() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterAnsiColorsToFirstLevel() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 false, false, true, false,
@@ -659,7 +688,8 @@ class ConsoleAppenderTests {
 
     @Test
     @DisplayName("Кастомный форматтер -- prettyEntities с кастомным форматом")
-    void customFormatterPrettyEntities() throws LoggerAppenderException {
+    @SneakyThrows
+    void customFormatterPrettyEntities() {
         var appender = new ConsoleAppender(
                 LoggingLevel.DEBUG,
                 true, true, false, false,
@@ -683,7 +713,7 @@ class ConsoleAppenderTests {
     }
 
     // Вспомогательный класс, который не может быть сериализован
-    private static class NonSerializableObject {
+    private static final class NonSerializableObject {
         @Override
         public String toString() {
             throw new RuntimeException("Cannot serialize");

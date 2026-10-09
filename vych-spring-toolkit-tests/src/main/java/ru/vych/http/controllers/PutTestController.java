@@ -4,8 +4,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.util.Map;
-
 import static jakarta.ws.rs.core.MediaType.*;
 import static ru.vych.http.controllers.PutTestController.PUT_CONTROLLER_PATH;
 
@@ -14,14 +12,21 @@ import static ru.vych.http.controllers.PutTestController.PUT_CONTROLLER_PATH;
  */
 @Path(PUT_CONTROLLER_PATH)
 public class PutTestController {
+
+    /** Путь контроллера. */
     public static final String PUT_CONTROLLER_PATH = "/putTest";
 
+    /** Эндпоинт для PUT с текстовым телом. */
     public static final String PUT_STRING_ENDPOINT = "/string";
+    /** Эндпоинт для PUT с JSON телом. */
     public static final String PUT_JSON_ENDPOINT = "/json";
+    /** Эндпоинт для PUT с path параметром. */
     public static final String PUT_PATH_ENDPOINT = "/{id}";
 
     /**
      * PUT запрос с телом в виде строки — эхо строки.
+     * @param body тело запроса
+     * @return ответ с эхом строки
      */
     @PUT
     @Path(PUT_STRING_ENDPOINT)
@@ -33,6 +38,8 @@ public class PutTestController {
 
     /**
      * PUT запрос с JSON телом — эхо JSON.
+     * @param body тело запроса
+     * @return ответ с эхом JSON
      */
     @PUT
     @Path(PUT_JSON_ENDPOINT)

@@ -10,7 +10,10 @@ package ru.vych.http.impl.common;
  * @see java.net.CookiePolicy
  */
 public enum CookiesPolicies {
+    /** Принимать все cookies. */
     ACCEPT_ALL,
+    /** Не принимать ни одного cookie. */
     ACCEPT_NONE,
+    /** Принимать cookies только от исходного сервера. */
     ACCEPT_ORIGINAL_SERVER;
 }

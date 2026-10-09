@@ -26,12 +26,15 @@ public class HttpClientBuilder {
      * Создаёт и настраивает экземпляр HTTP-клиента на основе переданных параметров.
      *
      * @param config               конфигурация клиента; не должен быть {@code null}
-     * @param logService           сервис логирования для записи событий работы клиента; не должен быть {@code null}
-     * @param requestInterceptors  список перехватчиков запросов, вызываемых перед отправкой каждого запроса; может быть пустым
-     * @param responseInterceptors список перехватчиков ответов, вызываемых после получения каждого ответа; может быть пустым
+     * @param logService           сервис логирования для записи событий работы клиента;
+     *                             не должен быть {@code null}
+     * @param requestInterceptors  список перехватчиков запросов, вызываемых перед отправкой
+     *                             каждого запроса; может быть пустым
+     * @param responseInterceptors список перехватчиков ответов, вызываемых после получения
+     *                             каждого ответа; может быть пустым
      * @return полностью настроенный экземпляр {@link ru.vych.http.impl.HttpClient}
      * @throws ru.vych.http.impl.exceptions.HttpClientException если не удалось создать клиент
-     *                                                         (некорректная конфигурация, ошибка инициализации cookie-хранилища и т. п.)
+     *     (некорректная конфигурация, ошибка инициализации cookie-хранилища и т. п.)
      */
     public HttpClient build(
             HttpClientConfig config, LogService logService,

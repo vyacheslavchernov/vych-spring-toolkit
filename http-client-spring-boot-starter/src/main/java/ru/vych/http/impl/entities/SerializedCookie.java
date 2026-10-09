@@ -41,6 +41,7 @@ public final class SerializedCookie implements Serializable {
      * @param createdAt timestamp создания в миллисекундах
      * @param expires   timestamp истечения в миллисекундах (null если не указан)
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @JsonCreator
     public SerializedCookie(
             @JsonProperty("name") String name,
@@ -138,7 +139,7 @@ public final class SerializedCookie implements Serializable {
      * @return true если cookie является persistent (не session)
      */
     public boolean hasTtl() {
-        return (maxAge != null && maxAge > 0) || (expires != null && expires > 0);
+        return maxAge != null && maxAge > 0 || expires != null && expires > 0;
     }
 
     /**

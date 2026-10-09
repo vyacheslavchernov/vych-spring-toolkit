@@ -126,7 +126,8 @@ public class HttpClientConfig {
      * По умолчанию — {@code ~/.config/vych-spring-toolkit/cookies/}.
      * </p>
      */
-    private Path cookieStorageDir = Path.of(System.getProperty("user.home"), ".config", "vych-spring-toolkit", "cookies");
+    private Path cookieStorageDir = Path.of(
+            System.getProperty("user.home"), ".config", "vych-spring-toolkit", "cookies");
 
     /**
      * Включает persistent storage cookies.

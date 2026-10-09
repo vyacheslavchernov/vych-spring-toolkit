@@ -13,10 +13,21 @@ package ru.vych.http.impl.exceptions;
  * @see HttpClientException
  */
 public class HttpClientInvalidRequestException extends HttpClientException {
+    /**
+     * Создаёт исключение с указанной сообщением.
+     *
+     * @param message сообщение об ошибке
+     */
     public HttpClientInvalidRequestException(String message) {
         super(message);
     }
 
+    /**
+     * Создаёт исключение с указанной сообщением и причиной.
+     *
+     * @param message сообщение об ошибке
+     * @param cause   причина возникновения исключения
+     */
     public HttpClientInvalidRequestException(String message, Throwable cause) {
         super(message, cause);
     }

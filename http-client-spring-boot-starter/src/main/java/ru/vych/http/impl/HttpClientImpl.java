@@ -36,31 +36,16 @@ import java.util.stream.Collectors;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
 
 /**
- * Полнофункциональная реализация {@link HttpClient} на базе стандартного
+ * Полнофункциональная реализация {@link HttpClient} на базе
  * {@code java.net.http.HttpClient} (Java 11+ HTTP Client API).
  * <p>
  * Поддерживает HTTP-методы GET, POST, PUT, DELETE, PATCH, HEAD и OPTIONS,
- * пользовательские перехватчики запросов и ответов, автоматическую десериализацию
- * JSON-ответов через Jackson, а также настройку cookie, редиректов и тайм-аутов
- * через {@link HttpClientConfig}.
+ * пользовательские перехватчики, автоматическую десериализацию JSON через Jackson,
+ * настройку cookie, редиректов и тайм-аутов через {@link HttpClientConfig}.
  * </p>
  * <p>
- * <b>Изоляция cookie:</b> каждый экземпляр клиента имеет собственное хранилище cookies
- * ({@code ConcurrentHashMap}), что обеспечивает полную изоляцию состояния между клиентами.
- * Глобальный {@code CookieHandler} не используется.
- * </p>
- * <p>
- * <b>Процесс выполнения запроса:</b>
- * <ol>
- *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
- *   <li>Формируется URI из корневого URL конфига + путь запроса + path- и query-параметры.</li>
- *   <li>Добавляются заголовки: сначала дефолтные из конфига, затем — из запроса, затем — cookies из внутреннего хранилища.</li>
- *   <li>Для POST, PUT, DELETE, PATCH, OPTIONS тело запроса сериализуется (String → строка, byte[] → байты, остальное → JSON через Jackson).</li>
- *   <li>HEAD запрос игнорирует тело запроса.</li>
- *   <li>Запрос отправляется через {@code java.net.http.HttpClient}.</li>
- *   <li>Ответ парсится: body десериализуется в {@link ru.vych.http.impl.entities.Request#getResponseClass()}, cookies сохраняются в хранилище.</li>
- *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
- * </ol>
+ * <b>Изоляция cookie:</b> каждый экземпляр имеет собственное хранилище cookies
+ * ({@code ConcurrentHashMap}), глобальный {@code CookieHandler} не используется.
  * </p>
  *
  * @see HttpClient
@@ -124,8 +109,9 @@ public class HttpClientImpl implements HttpClient {
      * @param logService           сервис логирования; не должен быть {@code null}
      * @param requestInterceptors  список перехватчиков запросов; может быть пустым
      * @param responseInterceptors список перехватчиков ответов; может быть пустым
-     * @throws ru.vych.http.impl.exceptions.HttpClientConfigurationException если некорректная конфигурация
-     *                                                                       или ошибка создания cookie-хранилища
+     * @throws ru.vych.http.impl.exceptions.HttpClientException если некорректная конфигурация
+     *                                                           или ошибка создания cookie-хранилища
+     * @throws ru.vych.http.impl.exceptions.HttpClientConfigurationException если конфигурация невалидна
      */
     public HttpClientImpl(
             HttpClientConfig config, LogService logService,
@@ -201,6 +187,22 @@ public class HttpClientImpl implements HttpClient {
         );
     }
 
+    /**
+     * Выполняет HTTP-запрос и возвращает результат.
+     * <p>
+     * Процесс выполнения:
+     * <ol>
+     *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
+     *   <li>Формируется и отправляется HTTP-запрос.</li>
+     *   <li>Ответ парсится и десериализуется.</li>
+     *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
+     * </ol>
+     * </p>
+     *
+     * @param request запрос для выполнения
+     * @return результат выполнения запроса
+     * @throws ru.vych.http.impl.exceptions.HttpClientException если произошла ошибка при выполнении
+     */
     @Override
     public Response execute(Request request) throws HttpClientException {
         requestInterceptors.forEach(filter -> {
@@ -234,17 +236,7 @@ public class HttpClientImpl implements HttpClient {
         return response;
     }
 
-    /**
-     * Выполняет HTTP GET-запрос.
-     * <p>
-     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
-     * отправляет и десериализует ответ.
-     * </p>
-     *
-     * @param request запрос, содержащий путь и заголовки
-     * @return обработанный {@link Response}
-     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
-     */
+    /** HTTP GET-запрос. */
     private Response get(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -263,18 +255,7 @@ public class HttpClientImpl implements HttpClient {
         return buildResponse(rs, request);
     }
 
-    /**
-     * Выполняет HTTP POST-запрос.
-     * <p>
-     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
-     * сериализует тело запроса и отправляет. Результат десериализуется.
-     * </p>
-     *
-     * @param request запрос, содержащий путь, заголовки и тело
-     * @return обработанный {@link Response}
-     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
-     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
-     */
+    /** HTTP POST-запрос. */
     private Response post(Request request) throws HttpClientException {
         Builder requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -292,18 +273,7 @@ public class HttpClientImpl implements HttpClient {
         return buildResponse(rs, request);
     }
 
-    /**
-     * Выполняет HTTP PUT-запрос.
-     * <p>
-     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
-     * сериализует тело запроса и отправляет. Результат десериализуется.
-     * </p>
-     *
-     * @param request запрос, содержащий путь, заголовки и тело
-     * @return обработанный {@link Response}
-     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
-     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
-     */
+    /** HTTP PUT-запрос. */
     private Response put(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -321,18 +291,7 @@ public class HttpClientImpl implements HttpClient {
         return buildResponse(rs, request);
     }
 
-    /**
-     * Выполняет HTTP DELETE-запрос.
-     * <p>
-     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
-     * сериализует тело запроса и отправляет. Результат десериализуется.
-     * </p>
-     *
-     * @param request запрос, содержащий путь, заголовки и тело
-     * @return обработанный {@link Response}
-     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
-     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
-     */
+    /** HTTP DELETE-запрос. */
     private Response delete(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -350,18 +309,7 @@ public class HttpClientImpl implements HttpClient {
         return buildResponse(rs, request);
     }
 
-    /**
-     * Выполняет HTTP PATCH-запрос.
-     * <p>
-     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
-     * сериализует тело запроса и отправляет. Результат десериализуется.
-     * </p>
-     *
-     * @param request запрос, содержащий путь, заголовки и тело
-     * @return обработанный {@link Response}
-     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
-     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
-     */
+    /** HTTP PATCH-запрос. */
     private Response patch(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -379,18 +327,7 @@ public class HttpClientImpl implements HttpClient {
         return buildResponse(rs, request);
     }
 
-    /**
-     * Выполняет HTTP HEAD-запрос.
-     * <p>
-     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
-     * отправляет и возвращает только заголовки ответа без тела.
-     * Тело запроса игнорируется (ограничение HTTP-протокола).
-     * </p>
-     *
-     * @param request запрос, содержащий путь и заголовки
-     * @return обработанный {@link Response} с заголовками и без тела
-     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
-     */
+    /** HTTP HEAD-запрос. */
     private Response head(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -408,18 +345,7 @@ public class HttpClientImpl implements HttpClient {
         return buildResponse(rs, request);
     }
 
-    /**
-     * Выполняет HTTP OPTIONS-запрос.
-     * <p>
-     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
-     * сериализует тело запроса (если указано) и отправляет. Результат десериализуется.
-     * </p>
-     *
-     * @param request запрос, содержащий путь, заголовки и тело
-     * @return обработанный {@link Response}
-     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
-     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
-     */
+    /** HTTP OPTIONS-запрос. */
     private Response options(Request request) throws HttpClientException {
         var requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
@@ -489,8 +415,10 @@ public class HttpClientImpl implements HttpClient {
      * <ol>
      *   <li>Корневого URL из {@link HttpClientConfig#getRoot()}.</li>
      *   <li>Пути из {@link ru.vych.http.impl.entities.Request#getUrl()}.</li>
-     *   <li>Path-параметров из {@link ru.vych.http.impl.entities.Request#getPathParams()} — вставляются как части пути.</li>
-     *   <li>Query-параметров из {@link ru.vych.http.impl.entities.Request#getQueryParams()} — форматируются как {@code key=value&...}.</li>
+     *   <li>Path-параметров из {@link ru.vych.http.impl.entities.Request#getPathParams()}
+     *       — вставляются как части пути.</li>
+     *   <li>Query-параметров из {@link ru.vych.http.impl.entities.Request#getQueryParams()}
+     *       — форматируются как {@code key=value&...}.</li>
      * </ol>
      * </p>
      *
@@ -770,6 +698,7 @@ public class HttpClientImpl implements HttpClient {
      * @param request      исходный запрос, содержащий {@code responseClass}
      * @return сконструированный {@link Response}
      * @throws ru.vych.http.impl.exceptions.HttpClientHandleResponseException если не удалось десериализовать body
+     * @throws ru.vych.http.impl.exceptions.HttpClientException если произошла ошибка при обработке ответа
      */
     protected Response buildResponse(HttpResponse<byte[]> httpResponse, Request request) throws HttpClientException {
         String bodyText = new String(httpResponse.body(), StandardCharsets.UTF_8);
@@ -784,7 +713,8 @@ public class HttpClientImpl implements HttpClient {
                 request,
                 httpResponse.statusCode(),
                 httpResponse.body(),
-                httpResponse.statusCode() != HttpStatus.OK || rsType != null && rsType != byte.class && rsType != byte[].class
+                (httpResponse.statusCode() != HttpStatus.OK
+                        || rsType != null && rsType != byte.class && rsType != byte[].class)
                         ? bodyText
                         : null,
                 mapBodyToResponseClass(bodyText, request.getResponseClass()),

@@ -2,6 +2,7 @@ package ru.vych.http.impl;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.InstanceOfAssertFactory;
@@ -21,7 +22,6 @@ import ru.vych.http.impl.entities.DummyDto;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.exceptions.HttpClientConfigurationException;
-import ru.vych.http.impl.exceptions.HttpClientException;
 import ru.vych.http.impl.exceptions.HttpClientHandleResponseException;
 import ru.vych.http.impl.interceptors.RequestInterceptor;
 import ru.vych.http.impl.interceptors.ResponseInterceptor;
@@ -67,10 +67,11 @@ class HttpClientImplTests {
     @ParameterizedTest
     @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#interceptorArgsProvider")
     @DisplayName("Проверка конструктора с валидными аргументами")
+    @SneakyThrows
     public void constructorValidArgs(
             List<RequestInterceptor> requestInterceptors,
             List<ResponseInterceptor> responseInterceptors
-    ) throws HttpClientException {
+    ) {
         var httpClient = new HttpClientImpl(config, logService, requestInterceptors, responseInterceptors);
         validateHttpClient(httpClient, requestInterceptors, responseInterceptors);
     }
@@ -120,7 +121,8 @@ class HttpClientImplTests {
     @ParameterizedTest
     @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#buildResponseArgsProvider")
     @DisplayName("Проверка корректного возврата тела ответа для разных типов")
-    public void buildResponseBody(HttpClientImplBuildResponseCheckData checkData) throws HttpClientException {
+    @SneakyThrows
+    public void buildResponseBody(HttpClientImplBuildResponseCheckData checkData) {
         var request = Request.builder()
                 .setUrl("")
                 .setMethod(HttpMethod.GET)
@@ -187,7 +189,8 @@ class HttpClientImplTests {
      */
     @Test
     @DisplayName("Проверка обработки некорректного JSON в теле ответа")
-    public void buildResponseInvalidJson() throws HttpClientException {
+    @SneakyThrows
+    public void buildResponseInvalidJson() {
         var request = Request.builder()
                 .setUrl("")
                 .setMethod(HttpMethod.GET)
@@ -208,9 +211,14 @@ class HttpClientImplTests {
      * в список {@code Header}.
      */
     @ParameterizedTest
-    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#buildResponseHeadersArgsProvider")
+    @MethodSource(
+            "ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#buildResponseHeadersArgsProvider")
     @DisplayName("Проверка корректного маппинга заголовков ответа")
-    public void buildResponseHeaders(Map<String, List<String>> headers, List<Header> expectedHeaders) throws HttpClientException {
+    @SneakyThrows
+    public void buildResponseHeaders(
+            Map<String, List<String>> headers,
+            List<Header> expectedHeaders
+    ) {
         var client = getValidClient();
         var request = Request.builder()
                 .setUrl("")
@@ -233,9 +241,11 @@ class HttpClientImplTests {
      * объединение корневого URL из конфигурации с путём, path-параметрами и query-параметрами.
      */
     @ParameterizedTest
-    @MethodSource("ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#httpClientImplBuildUriArgsProvider")
+    @MethodSource(
+            "ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders#httpClientImplBuildUriArgsProvider")
     @DisplayName("Проверка корректного построения URI")
-    public void buildUri(HttpClientImplBuildUriCheckData checkData) throws HttpClientException {
+    @SneakyThrows
+    public void buildUri(HttpClientImplBuildUriCheckData checkData) {
         var client = new HttpClientImpl(checkData.getConfig(), logService, null, null);
 
         assertThatCode(() -> client.buildUri(checkData.getRequest()))
@@ -252,7 +262,8 @@ class HttpClientImplTests {
     /**
      * Создаёт валидный экземпляр {@code HttpClientImpl}.
      */
-    private HttpClientImpl getValidClient() throws HttpClientException {
+    @SneakyThrows
+    private HttpClientImpl getValidClient() {
         return new HttpClientImpl(config, logService, null, null);
     }
 
@@ -341,7 +352,7 @@ class HttpClientImplTests {
     @Getter
     @Setter
     @Accessors(chain = true)
-    private static class DummyResponse implements HttpResponse {
+    private static final class DummyResponse implements HttpResponse {
         private int statusCode = 200;
         private HttpRequest request = null;
         private Optional<HttpResponse> previousResponse = Optional.empty();

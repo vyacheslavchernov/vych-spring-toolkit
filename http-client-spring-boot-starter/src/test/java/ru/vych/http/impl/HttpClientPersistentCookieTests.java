@@ -1,5 +1,6 @@
 package ru.vych.http.impl;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -8,12 +9,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.entities.CookieEntry;
-import ru.vych.http.impl.exceptions.HttpClientException;
 import ru.vych.logger.impl.LogService;
 
 import java.net.HttpCookie;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +39,8 @@ class HttpClientPersistentCookieTests {
      */
     @Test
     @DisplayName("Default cookies загружаются при инициализации")
-    void defaultCookiesLoadedOnInit() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void defaultCookiesLoadedOnInit() {
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://default.com"), new HttpCookie("default_cookie", "value1"))
         );
@@ -64,7 +64,8 @@ class HttpClientPersistentCookieTests {
      */
     @Test
     @DisplayName("getAllCookies возвращает immutable map")
-    void getAllCookiesReturnsImmutableMap() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void getAllCookiesReturnsImmutableMap() {
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://example.com"), new HttpCookie("test", "value"))
         );
@@ -87,7 +88,8 @@ class HttpClientPersistentCookieTests {
      */
     @Test
     @DisplayName("clearCookies удаляет только cookies указанного хоста")
-    void clearCookiesOnlyRemovesSpecifiedHost() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void clearCookiesOnlyRemovesSpecifiedHost() {
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://host1.com"), new HttpCookie("cookie1", "v1")),
                 new CookieEntry(new URI("https://host2.com"), new HttpCookie("cookie2", "v2"))
@@ -115,7 +117,8 @@ class HttpClientPersistentCookieTests {
      */
     @Test
     @DisplayName("getCookies бросает NPE при host == null")
-    void getCookiesThrowsNpeOnNullHost() throws HttpClientException {
+    @SneakyThrows
+    void getCookiesThrowsNpeOnNullHost() {
         HttpClientConfig config = new HttpClientConfig("TestService")
                 .setRoot("http://localhost:8080")
                 .setCookieStorageDir(tempDir);
@@ -132,7 +135,8 @@ class HttpClientPersistentCookieTests {
      */
     @Test
     @DisplayName("clearCookies бросает NPE при host == null")
-    void clearCookiesThrowsNpeOnNullHost() throws HttpClientException {
+    @SneakyThrows
+    void clearCookiesThrowsNpeOnNullHost() {
         HttpClientConfig config = new HttpClientConfig("TestService")
                 .setRoot("http://localhost:8080")
                 .setCookieStorageDir(tempDir);
@@ -149,7 +153,8 @@ class HttpClientPersistentCookieTests {
      */
     @Test
     @DisplayName("getCookies возвращает копию списка")
-    void getCookiesReturnsCopy() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void getCookiesReturnsCopy() {
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://example.com"), new HttpCookie("test", "value"))
         );
@@ -173,7 +178,8 @@ class HttpClientPersistentCookieTests {
      */
     @Test
     @DisplayName("getCookies фильтрует cookies по TTL")
-    void getCookiesFiltersByTtl() throws HttpClientException, URISyntaxException {
+    @SneakyThrows
+    void getCookiesFiltersByTtl() {
         // Cookie с maxAge > 0 будет сохранён с timestamp
         List<CookieEntry> cookieEntries = List.of(
                 new CookieEntry(new URI("https://example.com"), new HttpCookie("persistent", "value"))

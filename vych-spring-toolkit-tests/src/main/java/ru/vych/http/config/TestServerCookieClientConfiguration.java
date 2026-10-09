@@ -15,21 +15,42 @@ import java.util.List;
 
 import static ru.vych.http.config.TestServerConfiguration.TEST_SERVER_URI;
 
+/**
+ * Конфигурация HTTP клиентов с различными политиками обработки cookies.
+ */
 @Configuration
 public class TestServerCookieClientConfiguration {
 
+    /** Название клиента с политикой ACCEPT_ALL. */
     private static final String COOKIE_ACCEPT_ALL_CLIENT = "CookieAcceptAllClient";
+    /** Название клиента с политикой ACCEPT_NONE. */
     private static final String COOKIE_ACCEPT_NONE_CLIENT = "CookieAcceptNoneClient";
+    /** Название клиента с политикой ACCEPT_ORIGINAL_SERVER. */
     private static final String COOKIE_ORIGINAL_SERVER_CLIENT = "CookieOriginalServerClient";
+    /** Название клиента с дефолтными настройками. */
     private static final String COOKIE_WITH_DEFAULTS_CLIENT = "CookieWithDefaultsClient";
+    /** Название клиента с ACCEPT_NONE и дефолтными настройками. */
     private static final String COOKIE_ACCEPT_NONE_WITH_DEFAULTS_CLIENT = "CookieAcceptNoneWithDefaultsClient";
 
+    /** Сервисный код клиента ACCEPT_ALL. */
     public static final String COOKIE_ACCEPT_ALL_CLIENT_SERVICE_CODE = COOKIE_ACCEPT_ALL_CLIENT;
+    /** Сервисный код клиента ACCEPT_NONE. */
     public static final String COOKIE_ACCEPT_NONE_CLIENT_SERVICE_CODE = COOKIE_ACCEPT_NONE_CLIENT;
+    /** Сервисный код клиента ACCEPT_ORIGINAL_SERVER. */
     public static final String COOKIE_ORIGINAL_SERVER_CLIENT_SERVICE_CODE = COOKIE_ORIGINAL_SERVER_CLIENT;
+    /** Сервисный код клиента с дефолтными настройками. */
     public static final String COOKIE_WITH_DEFAULTS_CLIENT_SERVICE_CODE = COOKIE_WITH_DEFAULTS_CLIENT;
-    public static final String COOKIE_ACCEPT_NONE_WITH_DEFAULTS_CLIENT_SERVICE_CODE = COOKIE_ACCEPT_NONE_WITH_DEFAULTS_CLIENT;
+    /** Сервисный код клиента ACCEPT_NONE с дефолтными настройками. */
+    public static final String COOKIE_ACCEPT_NONE_WITH_DEFAULTS_CLIENT_SERVICE_CODE
+            = COOKIE_ACCEPT_NONE_WITH_DEFAULTS_CLIENT;
 
+    /**
+     * Создает HTTP клиент с политикой ACCEPT_ALL.
+     * @param builder билдер HTTP клиента
+     * @param logService сервис логирования
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Bean(name = COOKIE_ACCEPT_ALL_CLIENT_SERVICE_CODE)
     public HttpClient cookieAcceptAllClient(
             HttpClientBuilder builder, LogService logService
@@ -41,6 +62,13 @@ public class TestServerCookieClientConfiguration {
         return builder.build(config, logService, List.of(), List.of());
     }
 
+    /**
+     * Создает HTTP клиент с политикой ACCEPT_NONE.
+     * @param builder билдер HTTP клиента
+     * @param logService сервис логирования
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Bean(name = COOKIE_ACCEPT_NONE_CLIENT_SERVICE_CODE)
     public HttpClient cookieAcceptNoneClient(
             HttpClientBuilder builder, LogService logService
@@ -52,6 +80,13 @@ public class TestServerCookieClientConfiguration {
         return builder.build(config, logService, List.of(), List.of());
     }
 
+    /**
+     * Создает HTTP клиент с политикой ACCEPT_ORIGINAL_SERVER.
+     * @param builder билдер HTTP клиен��а
+     * @param logService сервис логирования
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Bean(name = COOKIE_ORIGINAL_SERVER_CLIENT_SERVICE_CODE)
     public HttpClient cookieOriginalServerClient(
             HttpClientBuilder builder, LogService logService
@@ -63,6 +98,13 @@ public class TestServerCookieClientConfiguration {
         return builder.build(config, logService, List.of(), List.of());
     }
 
+    /**
+     * Создает HTTP клиент с дефолтными cookies.
+     * @param builder билдер HTTP клиента
+     * @param logService сервис логирования
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Bean(name = COOKIE_WITH_DEFAULTS_CLIENT_SERVICE_CODE)
     public HttpClient cookieWithDefaultsClient(
             HttpClientBuilder builder, LogService logService
@@ -84,6 +126,13 @@ public class TestServerCookieClientConfiguration {
         }
     }
 
+    /**
+     * Создает HTTP клиент с политикой ACCEPT_NONE и дефолтными cookies.
+     * @param builder билдер HTTP клиента
+     * @param logService сервис логирования
+     * @return настроенный HttpClient
+     * @throws HttpClientException при ошибке создания клиента
+     */
     @Bean(name = COOKIE_ACCEPT_NONE_WITH_DEFAULTS_CLIENT_SERVICE_CODE)
     public HttpClient cookieAcceptNoneWithDefaultsClient(
             HttpClientBuilder builder, LogService logService

@@ -1,10 +1,10 @@
 package http;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.exceptions.HttpClientException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static ru.vych.http.controllers.DeleteTestController.*;
@@ -21,7 +21,8 @@ public class HttpClientDeleteTests extends BaseHttpTest {
      */
     @Test
     @DisplayName("Тест отправки DELETE запроса без тела")
-    public void deleteWithoutBodyTest() throws HttpClientException {
+    @SneakyThrows
+    public void deleteWithoutBodyTest() {
         var rq = Request.builder()
                 .setUrl(DELETE_CONTROLLER_PATH + DELETE_WITHOUT_BODY_ENDPOINT)
                 .setMethod(HttpMethod.DELETE)

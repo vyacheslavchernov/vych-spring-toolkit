@@ -13,10 +13,21 @@ package ru.vych.http.impl.exceptions;
  * @see HttpClientException
  */
 public class HttpClientHandleResponseException extends HttpClientException {
+    /**
+     * Создаёт исключение с указанной сообщением.
+     *
+     * @param message сообщение об ошибке
+     */
     public HttpClientHandleResponseException(String message) {
         super(message);
     }
 
+    /**
+     * Создаёт исключение с указанной сообщением и причиной.
+     *
+     * @param message сообщение об ошибке
+     * @param cause   причина возникновения исключения
+     */
     public HttpClientHandleResponseException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -10,7 +10,6 @@ import ru.vych.logger.impl.exceptions.LoggerAppenderException;
 
 import java.io.PrintStream;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 /**
  * Аппендер для записи лог-сообщений в консоль (System.out / System.err).
@@ -91,7 +90,7 @@ public class ConsoleAppender implements LogAppender {
             return;
         }
 
-        PrintStream stream = (event.getLoggingLevel() == LoggingLevel.ERROR ? System.err : System.out);
+        PrintStream stream = event.getLoggingLevel() == LoggingLevel.ERROR ? System.err : System.out;
         String logLine = formatLogLine(event);
 
         if (enableColors) {
@@ -146,7 +145,8 @@ public class ConsoleAppender implements LogAppender {
 
         if (!isValid) {
             formatter = DEFAULT_FORMAT_PATTERN;
-            System.err.println("[ConsoleAppender] Неверный формат форматтера строки лога. Используется формат по умолчанию.");
+            System.err.println("[ConsoleAppender] Неверный формат форматтера. "
+                    + "Используется формат по умолчанию.");
         }
 
         // Форматируем timestamp

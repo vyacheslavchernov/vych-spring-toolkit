@@ -35,7 +35,7 @@ public class LogService {
      * Код этого сервиса, используется при логировании внутренних сообщений (например,
      * при ошибке записи в аппендер или при инициализации).
      */
-    public final static String SERVICE_CODE = "LoggerService";
+    public static final String SERVICE_CODE = "LoggerService";
     private final String uuid = UUID.randomUUID().toString();
 
     private final List<LogAppender> appenders;

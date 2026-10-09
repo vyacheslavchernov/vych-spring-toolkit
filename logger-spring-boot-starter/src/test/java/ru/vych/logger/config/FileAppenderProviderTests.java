@@ -1,11 +1,11 @@
 package ru.vych.logger.config;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import ru.vych.logger.impl.appenders.FileAppender;
 import ru.vych.logger.impl.common.LoggingLevel;
-import ru.vych.logger.impl.exceptions.LoggerAppenderException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,7 +43,8 @@ class FileAppenderProviderTests {
 
     @Test
     @DisplayName("create возвращает экземпляр FileAppender")
-    void createReturnsFileAppenderInstance() throws LoggerAppenderException {
+    @SneakyThrows
+    void createReturnsFileAppenderInstance() {
         var properties = new FileAppenderProperties();
         properties.setDir(tempDir.toString());
         properties.setDatePattern("");
@@ -58,7 +59,8 @@ class FileAppenderProviderTests {
 
     @Test
     @DisplayName("create создаёт директорию для файла логов")
-    void createCreatesDirectoryForLogFile() throws LoggerAppenderException {
+    @SneakyThrows
+    void createCreatesDirectoryForLogFile() {
         var properties = new FileAppenderProperties();
         var nestedDir = tempDir.resolve("nested").resolve("deep");
         properties.setDir(nestedDir.toString());

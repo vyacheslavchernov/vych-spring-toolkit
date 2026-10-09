@@ -29,6 +29,7 @@ public class HttpClientLogger {
      *
      * @param config     конфигурация HTTP-клиента; не должен быть {@code null}
      * @param logService сервис логирования; не должен быть {@code null}
+     * @throws HttpClientConfigurationException если конфигурация или logService равны {@code null}
      */
     public HttpClientLogger(HttpClientConfig config, LogService logService) throws HttpClientConfigurationException {
         if (config == null) {

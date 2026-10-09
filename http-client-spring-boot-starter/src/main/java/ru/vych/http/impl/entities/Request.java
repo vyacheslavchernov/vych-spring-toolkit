@@ -10,9 +10,6 @@ import ru.vych.http.impl.exceptions.HttpClientInvalidRequestException;
 
 import java.util.*;
 
-import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_CONTENT_TYPE;
-import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_METHOD;
-
 /**
  * Описание HTTP-запроса для выполнения через {@link ru.vych.http.impl.HttpClient}.
  * <p>
@@ -199,7 +196,8 @@ public class Request {
          * <b>Валидация:</b>
          * <ul>
          *   <li>Метод должен быть указан — иначе {@link HttpClientInvalidRequestException}.</li>
-         *   <li>Для POST, PUT, DELETE, PATCH, OPTIONS с телом должен быть установлен Content-Type — иначе {@link HttpClientInvalidRequestException}.</li>
+         *   <li>Для POST, PUT, DELETE, PATCH, OPTIONS с телом должен быть установлен
+         *       Content-Type — иначе {@link HttpClientInvalidRequestException}.</li>
          *   <li>HEAD игнорирует тело запроса.</li>
          * </ul>
          * </p>

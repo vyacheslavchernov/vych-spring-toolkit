@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 scope: architecture
 ---
 
@@ -7,7 +7,66 @@ scope: architecture
 
 Принятые в проекте конвенции написания кода, стили и паттерны. Применяются ко всем модулям: `http-client-spring-boot-starter`, `logger-spring-boot-starter`, `vych-spring-toolkit-tests`.
 
-> **Важно:** В проекте **нет** автоматических линтеров. Все правила enforced вручную или через IDE-настройки.
+> **Важно:** В проекте используется **Checkstyle** для автоматической проверки стиля кода.
+> Запуск: `mvn validate` (автоматически при сборке) или `mvn checkstyle:check` (явный вызов).
+
+---
+
+## 0. Checkstyle
+
+### Правило
+
+**Никогда не правьте `checkstyle.xml`, если сборка проваливается из-за ошибок checkstyle.**
+
+При провале сборки из-за checkstyle:
+- **Правьте код**, чтобы он проходил проверки
+- **НЕ правьте конфигурацию** checkstyle, чтобы код проходил проверки
+- Конфигурация — это стандарт проекта. Код должен соответствовать стандарту, а не наоборот
+
+Исключение: если правило checkstyle действительно некорректно (например, конфликтует с принятыми конвенциями), сначала обсудите это и обновите `docs/coding-standards.md`, а затем меняйте конфигурацию.
+
+### Запуск
+
+- Автоматически: `mvn validate` (фаза validate, часть сборки)
+- Явно: `mvn checkstyle:check`
+- Результат: предупреждения (warnings) и ошибки (errors) **блокируют** сборку
+
+### Используемые правила
+
+Базовая конфигурация в [`checkstyle.xml`](../checkstyle.xml):
+
+- Длина строки ≤ 120 символов
+- Длина файла ≤ 1000 строк
+- **Javadoc для всех публичных классов** (`JavadocType`)
+- **Javadoc для публичных полей** (`JavadocVariable` с scope=public)
+- **Javadoc для всех публичных и protected методов** (`JavadocMethod`):
+  - Описание метода
+  - `@param` для каждого параметра
+  - `@return` для возвращаемого значения
+  - `@throws` для всех кидаемых исключений с указанием причин
+- **Javadoc для protected методов** (`MissingJavadocMethod` с scope=protected)
+- **Javadoc для публичных полей** (`JavadocVariable`)
+- Обязательный `@Override` (`MissingOverride`)
+- Запрет redundant/unused импортов
+- Проверка имён переменных, методов, параметров
+- Отступы: 4 пробела
+- K&R style для скобок
+- Проверка пустых catch блоков
+- Проверка множественных объявлений переменных
+- Проверка `StringLiteralEquality`
+
+### Статические импорты
+
+Константы и часто используемые методы должны быть статически импортированы, а не вызваны через `SomeClass.CONSTANT` или `SomeClass.method()`:
+
+- Константы: `import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;`
+- AssertJ: `import static org.assertj.core.api.Assertions.assertThat;`
+- Allure Steps: `import static io.qameta.allure.Step.step;`
+- Mockito: `import static org.mockito.Mockito.*;`
+
+Прямое обращение `SomeClass.CONSTANT` или `SomeClass.method()` не запрещено checkstyle, но нарушает конвенцию проекта. Такие случаи нужно исправлять добавлением статического импорта.
+
+> **Совет:** Настройте IDE на показ предупреждений checkstyle, чтобы ловить проблемы до сборки.
 
 ---
 
@@ -34,7 +93,8 @@ scope: architecture
 ### Константы
 - **UPPER_SNAKE_CASE** для значений: `RESET`, `OK`, `APPLICATION_JSON`
 - **UPPER_SNAKE_CASE** для сообщений исключений: `CREATION_ERROR_CONFIGURATION_IS_NULL`
-- **`public final static String`** для `SERVICE_CODE`: `"LoggerService"`, `"ConsoleAppender"`
+- **`static final String`** для `SERVICE_CODE`: `"LoggerService"`, `"ConsoleAppender"`
+- **Запрещено** `public final static` — checkstyle требует `static final` (модификатор `public` ставится перед `static`)
 
 ---
 
@@ -49,8 +109,7 @@ scope: architecture
 6. Вложенные классы
 
 ### Порядок импортов
-1. Java стандартные → 2. Third-party → 3. Статические импорты
-
+1. Third-party → 2. Java стандартные → 3. Статические импорты
 ---
 
 ## 3. Lombok
@@ -161,7 +220,13 @@ System.err.println("[FileAppender] Не удалось закрыть файл: 
 
 ## 9. JavaDoc
 
-**Обязателен** на каждом публичном классе, методе, поле — на русском языке.
+**Обязателен** на каждом публичном классе, методе и публичном поле — на русском языке.
+**Также обязателен** на protected методах (`MissingJavadocMethod` с scope=protected).
+Приватные и protected поля javadoc не требуют.
+
+- `<p>` для абзацев, `{@link}` для ссылок, `{@code}` для кода
+- `@param`, `@return`, `@throws` — всегда (checkstyle `JavadocMethod` с `validateThrows=true`)
+- `@see` — для связанных классов
 
 - `<p>` для абзацев, `{@link}` для ссылок, `{@code}` для кода
 - `@param`, `@return`, `@throws` — всегда
@@ -202,6 +267,25 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
 ```
+
+### Исключения в тестах
+
+**Для методов с тестами, в которых может быть выброшено checked-исключение, НЕ добавляйте `throws` в сигнатуру метода.**
+
+Вместо этого используйте `@SneakyThrows` из Lombok — это избавляет от необходимости писать `@throws` в Javadoc метода с тестом.
+
+```java
+@Test
+@DisplayName("Build request without method should throw exception")
+@SneakyThrows
+void buildRequestWithoutMethodThrows() {
+    assertThatThrownBy(() -> requestBuilder.build())
+        .isInstanceOf(HttpClientInvalidRequestException.class)
+        .describedAs("Проверка исключения при build без method");
+}
+```
+
+> **Почему:** `JavadocMethod` с `allowMissingParamTags=false` и `allowMissingReturnTag=false` требует `@param` и `@return` в Javadoc для всех публичных методов. `@SneakyThrows` позволяет избежать добавления `throws` в сигнатуру, что избавляет от необходимости писать `@throws` в Javadoc теста.
 
 ### Именование
 - **Тестовые классы**: `{ClassName}Tests` (множественное число): `HttpClientImplTests`, `RequestBuilderTests`

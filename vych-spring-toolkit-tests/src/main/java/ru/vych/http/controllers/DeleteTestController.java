@@ -13,13 +13,19 @@ import static ru.vych.http.controllers.DeleteTestController.DELETE_CONTROLLER_PA
  */
 @Path(DELETE_CONTROLLER_PATH)
 public class DeleteTestController {
+
+    /** Путь контроллера. */
     public static final String DELETE_CONTROLLER_PATH = "/deleteTest";
 
+    /** Эндпоинт DELETE без тела. */
     public static final String DELETE_WITHOUT_BODY_ENDPOINT = "/withoutBody/{id}";
+    /** Эндпоинт DELETE с телом. */
     public static final String DELETE_WITH_BODY_ENDPOINT = "/withBody";
 
     /**
      * DELETE запрос без тела — возвращает результат удаления.
+     * @param id идентификатор удаляемого ресурса
+     * @return результат удаления
      */
     @DELETE
     @Path(DELETE_WITHOUT_BODY_ENDPOINT)

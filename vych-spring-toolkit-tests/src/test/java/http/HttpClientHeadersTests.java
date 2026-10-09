@@ -1,10 +1,10 @@
 package http;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.Request;
-import ru.vych.http.impl.exceptions.HttpClientException;
 
 import java.util.List;
 import java.util.Map;
@@ -15,11 +15,19 @@ import static ru.vych.http.controllers.GetTestController.GET_CONTROLLER_PATH;
 import static ru.vych.http.controllers.GetTestController.GET_HEADERS_ENDPOINT;
 import static ru.vych.http.impl.common.HttpStatus.OK;
 
+/**
+ * Тесты работы с заголовками.
+ */
 @DisplayName("Тесты работы с заголовками")
 public class HttpClientHeadersTests extends BaseHttpTest {
+
+    /** Имя заголовка из конфигурации. */
     private static final String CONFIG_HEADER_NAME = "X-Config-Header";
+    /** Значение заголовка из конфигурации. */
     private static final String CONFIG_HEADER_VALUE = "config-value";
+    /** Имя заголовка из запроса. */
     private static final String REQUEST_HEADER_NAME = "X-Request-Header";
+    /** Значение заголовка из запроса. */
     private static final String REQUEST_HEADER_VALUE = "request-value";
 
     /**
@@ -28,7 +36,8 @@ public class HttpClientHeadersTests extends BaseHttpTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("Проверка отправки заголовков из конфигурации")
-    public void configHeadersAreSent() throws HttpClientException {
+    @SneakyThrows
+    public void configHeadersAreSent() {
         var rq = Request.builder()
                 .setUrl(GET_CONTROLLER_PATH + GET_HEADERS_ENDPOINT)
                 .setMethod(HttpMethod.GET)
@@ -56,7 +65,8 @@ public class HttpClientHeadersTests extends BaseHttpTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("Проверка что заголовки с разными именами не перетирают друг-друга")
-    public void requestHeadersWithDifferentNamesMergesWithConfigHeaders() throws HttpClientException {
+    @SneakyThrows
+    public void requestHeadersWithDifferentNamesMergesWithConfigHeaders() {
         var rq = Request.builder()
                 .setUrl(GET_CONTROLLER_PATH + GET_HEADERS_ENDPOINT)
                 .setMethod(HttpMethod.GET)
@@ -92,7 +102,8 @@ public class HttpClientHeadersTests extends BaseHttpTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("Проверка что заголовки с одинаковым именем не перетирают друг-друга")
-    public void requestHeadersWithSameNameDoesNotOverwriteConfigHeaders() throws HttpClientException {
+    @SneakyThrows
+    public void requestHeadersWithSameNameDoesNotOverwriteConfigHeaders() {
         var rq = Request.builder()
                 .setUrl(GET_CONTROLLER_PATH + GET_HEADERS_ENDPOINT)
                 .setMethod(HttpMethod.GET)
