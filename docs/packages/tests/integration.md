@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 scope: package
 ---
 
@@ -88,6 +88,42 @@ JAX-RS `ExceptionMapper<Throwable>` — глобальный обработчи�
 | `/loop` | GET | 302 → `/redirectTest/loop` (зацикливание) |
 | `/external` | GET | 302 → `https://example.com` |
 | `/post-redirect` | POST | 302 → `/getTest/getHelloWorld` |
+
+### `PutTestController` (`@Path("/putTest")`)
+
+| URL | Метод | Возврат |
+|---|---|---|
+| `/putString` | PUT | 200, эхо строки |
+| `/putJson` | PUT | 200, эхо JSON-тела |
+| `/putBytes` | PUT | 200, эхо байт |
+
+### `DeleteTestController` (`@Path("/deleteTest")`)
+
+| URL | Метод | Возврат |
+|---|---|---|
+| `/deleteWithBody` | DELETE | 200, эхо тела запроса |
+| `/deleteWithPath` | DELETE | 200, эхо path-параметра |
+
+### `PatchTestController` (`@Path("/patchTest")`)
+
+| URL | Метод | Возврат |
+|---|---|---|
+| `/patchJson` | PATCH | 200, эхо JSON-тела |
+| `/patchString` | PATCH | 200, эхо строки |
+
+### `HeadTestController` (`@Path("/headTest")`)
+
+| URL | Метод | Возврат |
+|---|---|---|
+| `/headHelloWorld` | HEAD | 200, только заголовки |
+| `/headWithPath` | HEAD | 200, только заголовки с path-параметром |
+
+### `OptionsTestController` (`@Path("/optionsTest")`)
+
+| URL | Метод | Возврат |
+|---|---|---|
+| `/optionsHelloWorld` | OPTIONS | 200, эхо тела запроса |
+| `/optionsWithPath` | OPTIONS | 200, эхо path-параметра и тела |
 
 ## ru.vych.http.entities
 

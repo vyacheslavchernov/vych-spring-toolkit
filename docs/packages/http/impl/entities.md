@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 scope: package
 ---
 
@@ -17,7 +17,7 @@ scope: package
 
 **Lombok:** `@Getter @AllArgsConstructor @Accessors(chain = true) @ToString @EqualsAndHashCode`.
 
-**Вложенный класс `Builder`:** `setQueryParams()`, `addQueryParam()`, `addPathParam()`, `addHeader()`, `setContentType()`, `build()` (валидация: method ≠ null, POST с payload → Content-Type обязателен).
+**Вложенный класс `Builder`:** `setQueryParams()`, `addQueryParam()`, `addPathParam()`, `addHeader()`, `setContentType()`, `build()` (валидация: method ≠ null; для POST, PUT, DELETE, PATCH, OPTIONS с payload → Content-Type обязателен; HEAD игнорирует тело).
 
 **Особенности:** `@ToString`/`@EqualsAndHashCode` включают `uuid` — два запроса с одинаковыми параметрами, но разными UUID, **не равны**. `responseClass`: null/byte/byte[] → десериализация пропускается; String → raw string; иначе → Jackson.
 

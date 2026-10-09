@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 scope: package
 ---
 
@@ -48,11 +48,21 @@ java.lang.Exception
 
 Ошибка невалидного `Request` (не указан метод, POST с телом без Content-Type).
 
-**Конструкторы:** `(String message)` — **без конструктора с `Throwable cause`** (аномалия в иерархии).
+**Конструкторы:** `(String message)`, `(String message, Throwable cause)`.
 
 ### `HttpExceptionsMessages`
 
-Utility-класс с 12 статическими константами сообщений (static import). Сообщения на русском языке.
+Utility-класс с 20 статическими константами сообщений (static import). Сообщения на русском языке.
+
+**Configuration errors (6):** `CREATION_ERROR_CONFIGURATION_IS_NULL`, `CREATION_ERROR_ROOT_IS_NULL`, `CREATION_ERROR_COOKIE_POLICY_IS_NULL`, `CREATION_ERROR_COOKIES_IS_NULL`, `CREATION_ERROR_INVALID_TIMEOUT_OR_VERSION`, `CREATION_ERROR_LOG_SERVICE_IS_NULL`
+
+**Request errors (3):** `REQUEST_ERROR_GENERIC`, `REQUEST_ERROR_INVALID_METHOD`, `REQUEST_ERROR_INVALID_CONTENT_TYPE`
+
+**Execute errors (4):** `EXECUTE_ERROR_TIMEOUT`, `EXECUTE_ERROR_CONNECTION_REFUSED`, `EXECUTE_ERROR_DNS`, `EXECUTE_ERROR_UNKNOWN`
+
+**Response errors (3):** `RESPONSE_ERROR_GENERIC`, `RESPONSE_ERROR_REQUEST_BODY_SERIALIZATION`, `RESPONSE_ERROR_RESPONSE_BODY_DESERIALIZATION`
+
+**Cookie storage errors (4):** `COOKIE_STORAGE_ERROR_READ`, `COOKIE_STORAGE_ERROR_WRITE`, `COOKIE_STORAGE_ERROR_CORRUPTED`, `COOKIE_STORAGE_ERROR_HOSTNAME`
 
 ## Точки выброса
 

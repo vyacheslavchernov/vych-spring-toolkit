@@ -269,7 +269,7 @@ HttpClientConfig config = new HttpClientConfig("MyService")
 
 В модуле доступны классы-константы для удобства работы:
 
-* `HttpMethod` — HTTP-методы: `GET`, `POST`
+* `HttpMethod` — HTTP-методы: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`
 * `HttpStatus` — все стандартные HTTP статус-коды: `OK`, `NOT_FOUND`, `INTERNAL_SERVER_ERROR` и т. д.
 * `MediaType` — MIME-типы: `APPLICATION_JSON`, `TEXT_PLAIN`, `MULTIPART_FORM_DATA` и т. д.
 
