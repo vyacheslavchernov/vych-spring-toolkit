@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 scope: module
 ---
 
@@ -8,8 +8,6 @@ scope: module
 Spring Boot starter для кастомного консольного логгера с мульти-аппендером, фильтрами и ANSI-цветами.
 
 ## Назначение
-
-Spring Boot starter для кастомного консольного логгера с мульти-аппендером, фильтрами и ANSI-цветами.
 
 Предоставляет собственный `LogService` с поддержкой multi-appender pipeline, level-based фильтрации, JSON-сериализации доп. объектов и ANSI-цветов для консоли.
 

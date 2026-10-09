@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 scope: package
 ---
 
@@ -15,7 +15,7 @@ scope: package
 
 ### `HttpClientImpl`
 
-Реализация поверх Java 11 `HttpClient`. Поддерживает GET/POST, кастомные хедеры, cookie-политики, редиректы. UUID-трейсинг для каждого запроса.
+Реализация поверх Java 11 `HttpClient`. Поддерживает GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, кастомные хедеры, cookie-политики, редиректы. UUID-трейсинг для каждого запроса.
 
 **Ключевые методы:** `execute(Request)` — цепочка: request-interceptors → get()/post() → response-interceptors. `buildBody(Request)` — поддержка null/String/byte[]/JSON payload. `buildUri(Request)` — percent-encoding с сохранением `%XX`. `buildResponse(HttpResponse, Request)` — десериализация через Jackson.
 

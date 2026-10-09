@@ -21,9 +21,14 @@ public class TestServerConfiguration {
         ResourceConfig config =
                 new ResourceConfig()
                         .register(CookieTestController.class)
+                        .register(DeleteTestController.class)
                         .register(ErrorTestController.class)
                         .register(GetTestController.class)
+                        .register(HeadTestController.class)
+                        .register(OptionsTestController.class)
+                        .register(PatchTestController.class)
                         .register(PostTestController.class)
+                        .register(PutTestController.class)
                         .register(RedirectTestController.class)
                         .register(JacksonFeature.class)
                         .register(ExceptionHandler.class);

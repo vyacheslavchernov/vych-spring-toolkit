@@ -2,6 +2,9 @@ package ru.vych.http.impl.entities;
 
 import lombok.*;
 import lombok.experimental.Accessors;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_CONTENT_TYPE;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_METHOD;
+
 import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.exceptions.HttpClientInvalidRequestException;
 
@@ -44,7 +47,7 @@ public class Request {
     private String url;
 
     /**
-     * HTTP-метод запроса (GET или POST).
+     * HTTP-метод запроса (GET, POST, PUT, DELETE, PATCH, HEAD или OPTIONS).
      * <p>Обязательный параметр — должен быть установлен перед вызовом {@link Builder#build()}.</p>
      *
      * @see HttpMethod
@@ -196,7 +199,8 @@ public class Request {
          * <b>Валидация:</b>
          * <ul>
          *   <li>Метод должен быть указан — иначе {@link HttpClientInvalidRequestException}.</li>
-         *   <li>Для POST с телом должен быть установлен Content-Type — иначе {@link HttpClientInvalidRequestException}.</li>
+         *   <li>Для POST, PUT, DELETE, PATCH, OPTIONS с телом должен быть установлен Content-Type — иначе {@link HttpClientInvalidRequestException}.</li>
+         *   <li>HEAD игнорирует тело запроса.</li>
          * </ul>
          * </p>
          *
@@ -208,7 +212,9 @@ public class Request {
                 throw new HttpClientInvalidRequestException(REQUEST_ERROR_INVALID_METHOD);
             }
 
-            if ((method == HttpMethod.POST && payload != null) && (contentType == null || contentType.isEmpty())) {
+            // HEAD игнорирует тело запроса
+            boolean supportsPayload = method != HttpMethod.HEAD;
+            if (supportsPayload && payload != null && (contentType == null || contentType.isEmpty())) {
                 throw new HttpClientInvalidRequestException(REQUEST_ERROR_INVALID_CONTENT_TYPE);
             }
 

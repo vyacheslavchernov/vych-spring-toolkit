@@ -39,9 +39,10 @@ import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
  * Полнофункциональная реализация {@link HttpClient} на базе стандартного
  * {@code java.net.http.HttpClient} (Java 11+ HTTP Client API).
  * <p>
- * Поддерживает HTTP-методы GET и POST, пользовательские перехватчики запросов
- * и ответов, автоматическую десериализацию JSON-ответов через Jackson,
- * а также настройку cookie, редиректов и тайм-аутов через {@link HttpClientConfig}.
+ * Поддерживает HTTP-методы GET, POST, PUT, DELETE, PATCH, HEAD и OPTIONS,
+ * пользовательские перехватчики запросов и ответов, автоматическую десериализацию
+ * JSON-ответов через Jackson, а также настройку cookie, редиректов и тайм-аутов
+ * через {@link HttpClientConfig}.
  * </p>
  * <p>
  * <b>Изоляция cookie:</b> каждый экземпляр клиента имеет собственное хранилище cookies
@@ -54,7 +55,8 @@ import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
  *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
  *   <li>Формируется URI из корневого URL конфига + путь запроса + path- и query-параметры.</li>
  *   <li>Добавляются заголовки: сначала дефолтные из конфига, затем — из запроса, затем — cookies из внутреннего хранилища.</li>
- *   <li>Для POST тело запроса сериализуется (String → строка, byte[] → байты, остальное → JSON через Jackson).</li>
+ *   <li>Для POST, PUT, DELETE, PATCH, OPTIONS тело запроса сериализуется (String → строка, byte[] → байты, остальное → JSON через Jackson).</li>
+ *   <li>HEAD запрос игнорирует тело запроса.</li>
  *   <li>Запрос отправляется через {@code java.net.http.HttpClient}.</li>
  *   <li>Ответ парсится: body десериализуется в {@link ru.vych.http.impl.entities.Request#getResponseClass()}, cookies сохраняются в хранилище.</li>
  *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
@@ -213,6 +215,11 @@ public class HttpClientImpl implements HttpClient {
         Response response = switch (request.getMethod()) {
             case GET -> get(request);
             case POST -> post(request);
+            case PUT -> put(request);
+            case DELETE -> delete(request);
+            case PATCH -> patch(request);
+            case HEAD -> head(request);
+            case OPTIONS -> options(request);
         };
 
         responseInterceptors.forEach(filter -> {
@@ -272,6 +279,151 @@ public class HttpClientImpl implements HttpClient {
         Builder requestBuilder = HttpRequest.newBuilder(buildUri(request));
         addHeaders(requestBuilder, request);
         requestBuilder.POST(buildBody(request));
+
+        HttpResponse<byte[]> rs;
+        try {
+            rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        } catch (Exception e) {
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
+                    request, e.toString());
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
+        }
+        return buildResponse(rs, request);
+    }
+
+    /**
+     * Выполняет HTTP PUT-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * сериализует тело запроса и отправляет. Результат десериализуется.
+     * </p>
+     *
+     * @param request запрос, содержащий путь, заголовки и тело
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
+     */
+    private Response put(Request request) throws HttpClientException {
+        var requestBuilder = HttpRequest.newBuilder(buildUri(request));
+        addHeaders(requestBuilder, request);
+        requestBuilder.PUT(buildBody(request));
+
+        HttpResponse<byte[]> rs;
+        try {
+            rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        } catch (Exception e) {
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
+                    request, e.toString());
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
+        }
+        return buildResponse(rs, request);
+    }
+
+    /**
+     * Выполняет HTTP DELETE-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * сериализует тело запроса и отправляет. Результат десериализуется.
+     * </p>
+     *
+     * @param request запрос, содержащий путь, заголовки и тело
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
+     */
+    private Response delete(Request request) throws HttpClientException {
+        var requestBuilder = HttpRequest.newBuilder(buildUri(request));
+        addHeaders(requestBuilder, request);
+        requestBuilder.method("DELETE", buildBody(request));
+
+        HttpResponse<byte[]> rs;
+        try {
+            rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        } catch (Exception e) {
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
+                    request, e.toString());
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
+        }
+        return buildResponse(rs, request);
+    }
+
+    /**
+     * Выполняет HTTP PATCH-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * сериализует тело запроса и отправляет. Результат десериализуется.
+     * </p>
+     *
+     * @param request запрос, содержащий путь, заголовки и тело
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
+     */
+    private Response patch(Request request) throws HttpClientException {
+        var requestBuilder = HttpRequest.newBuilder(buildUri(request));
+        addHeaders(requestBuilder, request);
+        requestBuilder.method("PATCH", buildBody(request));
+
+        HttpResponse<byte[]> rs;
+        try {
+            rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        } catch (Exception e) {
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
+                    request, e.toString());
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
+        }
+        return buildResponse(rs, request);
+    }
+
+    /**
+     * Выполняет HTTP HEAD-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * отправляет и возвращает только заголовки ответа без тела.
+     * Тело запроса игнорируется (ограничение HTTP-протокола).
+     * </p>
+     *
+     * @param request запрос, содержащий путь и заголовки
+     * @return обработанный {@link Response} с заголовками и без тела
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     */
+    private Response head(Request request) throws HttpClientException {
+        var requestBuilder = HttpRequest.newBuilder(buildUri(request));
+        addHeaders(requestBuilder, request);
+        requestBuilder.method("HEAD", HttpRequest.BodyPublishers.noBody());
+
+        HttpResponse<byte[]> rs;
+        try {
+            rs = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        } catch (Exception e) {
+            httpClientLogger.error(
+                    config.getServiceCode(), clientUuid, REQUEST_ERROR_GENERIC,
+                    request, e.toString());
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
+        }
+        return buildResponse(rs, request);
+    }
+
+    /**
+     * Выполняет HTTP OPTIONS-запрос.
+     * <p>
+     * Формирует запрос через {@link HttpRequest.Builder}, добавляет заголовки,
+     * сериализует тело запроса (если указано) и отправляет. Результат десериализуется.
+     * </p>
+     *
+     * @param request запрос, содержащий путь, заголовки и тело
+     * @return обработанный {@link Response}
+     * @throws HttpClientExecuteRequestException если не удалось отправить запрос
+     * @throws HttpClientHandleResponseException если не удалось сериализовать тело
+     */
+    private Response options(Request request) throws HttpClientException {
+        var requestBuilder = HttpRequest.newBuilder(buildUri(request));
+        addHeaders(requestBuilder, request);
+        requestBuilder.method("OPTIONS", buildBody(request));
 
         HttpResponse<byte[]> rs;
         try {
@@ -709,31 +861,6 @@ public class HttpClientImpl implements HttpClient {
 
         // Если timestamp не найден — cookie не истёк (первый запрос)
         return false;
-    }
-
-    /**
-     * Проверяет, истёк ли cookie по expires (HTTP-date).
-     * <p>
-     * Если cookie имеет expires атрибут (устанавливается через Set-Cookie header
-     * с датой истечения), проверяется что currentMillis &lt; expires.
-     * </p>
-     *
-     * @param cookie cookie для проверки
-     * @return true если cookie истёк по expires
-     */
-    private boolean isCookieExpiredByExpires(HttpCookie cookie) {
-        // HttpCookie не хранит expires напрямую, но мы можем проверить
-        // через maxAge и createdAt из cookieCreationTimestamps
-        Long maxAgeObj = cookie.getMaxAge();
-        if (maxAgeObj == null || maxAgeObj <= 0) {
-            return false;
-        }
-
-        // Проверяем по maxAge + createdAt
-        Map<String, Long> timestamps = cookieCreationTimestamps.get(cookieStore.keySet().iterator().next());
-        // Этот метод используется в addCookiesToRequest, где cookies уже в хранилище
-        // Проверяем по maxAge
-        return System.currentTimeMillis() > System.currentTimeMillis() - maxAgeObj * 1000L;
     }
 
     @Override

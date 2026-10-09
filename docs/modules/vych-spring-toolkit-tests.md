@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-08
+last_updated: 2026-10-10
 scope: module
 ---
 
@@ -15,10 +15,10 @@ Spring Boot приложение с встроенным Jersey/Grizzly mock-с�
 
 - [`ru.vych`](../packages/tests/main.md) — `App` (Spring Boot main), `RandomUtils` (test utilities)
 - [`ru.vych.http.config`](../packages/tests/integration.md) — `TestServerConfiguration`, `TestServerDefaultClientConfiguration`, `TestServerCookieClientConfiguration`, `TestServerRedirectClientConfiguration`, `ExceptionHandler`
-- [`ru.vych.http.controllers`](../packages/tests/integration.md) — `GetTestController` (5 GET endpoints), `PostTestController` (4 POST endpoints), `CookieTestController`, `ErrorTestController`, `RedirectTestController`
+- [`ru.vych.http.controllers`](../packages/tests/integration.md) — `GetTestController` (5 GET endpoints), `PostTestController` (4 POST endpoints), `PutTestController` (3 PUT endpoints), `DeleteTestController` (2 DELETE endpoints), `PatchTestController` (2 PATCH endpoints), `HeadTestController` (2 HEAD endpoints), `OptionsTestController` (2 OPTIONS endpoints), `CookieTestController`, `ErrorTestController`, `RedirectTestController`
 - [`ru.vych.http.entities`](../packages/tests/integration.md) — `DummyDto` (test DTO)
 - [`ru.vych.http.interceptors`](../packages/tests/integration.md) — `CustomRequestInterceptor`, `CustomResponseInterceptor` (test interceptors)
-- [`http`](../packages/tests/integration.md) — `BaseHttpTest`, `HttpClientGetTests`, `HttpClientPostTests`, `HttpClientHeadersTests`, `HttpClientInterceptorsTests`, `HttpClientNon2xxResponseTests`, `HttpClientCookiePoliciesTests`, `HttpClientRedirectTests`
+- [`http`](../packages/tests/integration.md) — `BaseHttpTest`, `HttpClientGetTests`, `HttpClientPostTests`, `HttpClientPutTests`, `HttpClientDeleteTests`, `HttpClientPatchTests`, `HttpClientHeadTests`, `HttpClientOptionsTests`, `HttpClientHeadersTests`, `HttpClientInterceptorsTests`, `HttpClientNon2xxResponseTests`, `HttpClientCookiePoliciesTests`, `HttpClientRedirectTests`
 
 ## Mock-сервер
 
@@ -26,6 +26,11 @@ Spring Boot приложение с встроенным Jersey/Grizzly mock-с�
 |---|---|---|
 | `/getTest/*` | GET | 5 GET endpoint'ов для тестирования параметров |
 | `/postTest/*` | POST | 4 POST endpoint'а для тестирования payload |
+| `/putTest/*` | PUT | 3 PUT endpoint'а для тестирования полного обновления |
+| `/deleteTest/*` | DELETE | 2 DELETE endpoint'а для тестирования удаления |
+| `/patchTest/*` | PATCH | 2 PATCH endpoint'а для тестирования частичного обновления |
+| `/headTest/*` | HEAD | 2 HEAD endpoint'а для тестирования получения заголовков |
+| `/optionsTest/*` | OPTIONS | 2 OPTIONS endpoint'а для тестирования поддерживаемых методов |
 | `/cookieTest/*` | GET | 3 endpoint'а для тестирования cookie-политик |
 | `/errorTest/*` | GET | 5 endpoint'ов для тестирования non-2xx ответов |
 | `/redirectTest/*` | GET/POST | 5 endpoint'ов для тестирования редиректов |

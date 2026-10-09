@@ -1,11 +1,11 @@
 ---
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 scope: module
 ---
 
 # HTTP Client Starter
 
-Spring Boot starter для HTTP-клиента с поддержкой GET/POST, интерсепторов, cookie и логирования.
+Spring Boot starter для HTTP-клиента с поддержкой GET, POST, PUT, DELETE, PATCH, HEAD и OPTIONS, интерсепторов, cookie и логирования.
 
 ## Назначение
 
@@ -28,7 +28,7 @@ Spring Boot starter для HTTP-клиента с поддержкой GET/POST,
 
 ## Тесты
 
-Юнит-тесты (8 классов) в `http-client-spring-boot-starter/src/test/`:
+Юнит-тесты (10 классов) в `http-client-spring-boot-starter/src/test/`:
 - `HttpClientImplTests` — создание клиента, GET/POST, десериализация, построение URI
 - `HttpClientCookieStoreTests` — cookie storage, isolation, policies
 - `HttpClientPersistentCookieTests` — persistent cookie storage интеграция
@@ -37,8 +37,22 @@ Spring Boot starter для HTTP-клиента с поддержкой GET/POST,
 - `RequestBuilderTests` — request validation, builder pattern
 - `ResponseTests` — response body casting
 - `HttpClientInterceptorExceptionTests` — interceptor exception handling
+- `HttpClientMethodValidationTests` — валидация Content-Type для PUT, DELETE, PATCH, OPTIONS, HEAD
+- `HttpMethodTests` — проверка всех 7 HTTP-методов в enum
 
-Интеграционные тесты (7 классов) в `vych-spring-toolkit-tests` проверяют работу с mock-сервером (Jersey/Grizzly на :9090).
+Интеграционные тесты (12 классов) в `vych-spring-toolkit-tests` проверяют работу с mock-сервером (Jersey/Grizzly на :9090):
+- `HttpClientGetTests` — GET без параметров, с query, path, path+query, headers
+- `HttpClientPostTests` — POST empty, string, bytes, List, Map, DummyDto
+- `HttpClientPutTests` — PUT с payload
+- `HttpClientDeleteTests` — DELETE с телом
+- `HttpClientPatchTests` — PATCH с payload
+- `HttpClientHeadTests` — HEAD запросы (только заголовки)
+- `HttpClientOptionsTests` — OPTIONS запросы
+- `HttpClientHeadersTests` — заголовки из конфига, из запроса, дублирование
+- `HttpClientInterceptorsTests` — Request + Response интерсепторы по UUID
+- `HttpClientNon2xxResponseTests` — 400, 404, 500, 403, 401
+- `HttpClientCookiePoliciesTests` — ACCEPT_ALL, ACCEPT_NONE, ACCEPT_ORIGINAL_SERVER, pre-set cookies
+- `HttpClientRedirectTests` — 302/301 follow, 302 no follow, loop, external, POST→redirect
 
 ## Кросс-ссылки
 

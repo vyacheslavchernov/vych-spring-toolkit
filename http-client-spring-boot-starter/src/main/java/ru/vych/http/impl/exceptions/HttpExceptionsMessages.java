@@ -12,11 +12,9 @@ public final class HttpExceptionsMessages {
     public static String CREATION_ERROR_COOKIES_IS_NULL = "Ошибка создания клиента: дефолтные cookie не могут быть null";
     public static String CREATION_ERROR_INVALID_TIMEOUT_OR_VERSION = "Ошибка создания клиента: невалидный timeout или version";
     public static String CREATION_ERROR_LOG_SERVICE_IS_NULL = "Ошибка создания клиента: logService не может быть null";
-    public static String CREATION_ERROR_CONFIGURATION_IS_INCORRECT = "Ошибка создания клиента: Некорректная конфигурация http-клиента";
 
     // Request errors
     public static String REQUEST_ERROR_GENERIC = "Ошибка при отправке запроса";
-    public static String REQUEST_ERROR_CANT_HANDLE_BODY = "Ошибка при обработке тела запроса";
     public static String REQUEST_ERROR_INVALID_METHOD = "Для запроса необходимо указать используемый HTTP метод.";
     public static String REQUEST_ERROR_INVALID_CONTENT_TYPE = "Для POST запроса необходимо указать тип передаваемого контента.";
 
@@ -30,7 +28,6 @@ public final class HttpExceptionsMessages {
     public static String RESPONSE_ERROR_GENERIC = "Ошибка при обработке ответа";
     public static String RESPONSE_ERROR_REQUEST_BODY_SERIALIZATION = "Ошибка при сериализации тела запроса";
     public static String RESPONSE_ERROR_RESPONSE_BODY_DESERIALIZATION = "Ошибка при десериализации тела ответа";
-    public static String RESPONSE_ERROR_CANT_DESERIALIZE_BODY = "Ошибка при десериализации тела ответа";
 
     // Cookie storage errors
     public static String COOKIE_STORAGE_ERROR_READ = "Ошибка чтения cookie-файла";

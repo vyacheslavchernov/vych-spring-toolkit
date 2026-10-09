@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static ru.vych.http.impl.checkdata.providers.HttpClientImplTestsDataProviders.SERVICE_CODE;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.CREATION_ERROR_LOG_SERVICE_IS_NULL;
-import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.RESPONSE_ERROR_CANT_DESERIALIZE_BODY;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.RESPONSE_ERROR_RESPONSE_BODY_DESERIALIZATION;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Тесты класса HttpClientImpl")
@@ -200,7 +200,7 @@ class HttpClientImplTests {
         assertThatThrownBy(() -> getValidClient().buildResponse(dummyResponse, request))
                 .describedAs("Ошибка не соответствует ожидаемой")
                 .isInstanceOf(HttpClientHandleResponseException.class)
-                .hasMessage(RESPONSE_ERROR_CANT_DESERIALIZE_BODY);
+                .hasMessage(RESPONSE_ERROR_RESPONSE_BODY_DESERIALIZATION);
     }
 
     /**
