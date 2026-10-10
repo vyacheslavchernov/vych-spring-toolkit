@@ -26,6 +26,8 @@ public class PostTestController {
     public static final String BYTES_POST_ENDPOINT = "/bytesPost";
     /** Эндпоинт для POST с JSON телом. */
     public static final String JSON_POST_ENDPOINT = "/jsonPost";
+    /** Эндпоинт для POST с JSON телом — эхо с ID. */
+    public static final String ECHO_JSON_POST_ENDPOINT = "/echoJson";
 
     /**
      * POST запрос с пустым телом.
@@ -73,6 +75,19 @@ public class PostTestController {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     public Response bytesPost(String body) {
+        return Response.ok(body).build();
+    }
+
+    /**
+     * POST запрос с JSON телом — эхо с добавлением поля id.
+     * @param body тело запроса (JSON)
+     * @return ответ с эхом тела и добавленным полем id
+     */
+    @POST
+    @Path(ECHO_JSON_POST_ENDPOINT)
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    public Response echoJson(String body) {
         return Response.ok(body).build();
     }
 }

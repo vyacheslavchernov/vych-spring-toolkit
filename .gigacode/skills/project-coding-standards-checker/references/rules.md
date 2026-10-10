@@ -57,8 +57,8 @@ public class Example {
     // 5. Приватные/protected методы
     private void helper() { }
     
-    // 6. Вложенные классы
-    public static class Builder { }
+    // 5. Приватные/protected методы
+    private void helper() { }
 }
 ```
 
@@ -69,7 +69,59 @@ public class Example {
 
 ---
 
-## 3. Lombok
+## 3. Декомпозиция файлов
+
+### Правило
+
+**При разрастании файлов в первую очередь декомпозируйте — выделяйте отдельные сущности в отдельные файлы.**
+
+- ✅ Файлы < 1000 строк (checkstyle лимит)
+- ✅ Каждая ответственность в отдельном файле
+- ✅ Вспомогательные методы вынесены в utility-классы
+- ✅ Пакеты по смыслу: `config`, `common`, `entities`, `exceptions`, `interceptors`, `checkdata`, `providers`
+
+```java
+// ❌ Неправильно — файл разросся до 900 строк
+// Один класс содержит всё: конфигурацию, логику, валидацию, утилиты
+public class HttpClientImpl { /* 900 строк */ }
+
+// ✅ Правильно — декомпозиция
+public class HttpClientImpl implements HttpClient { /* 200 строк */ }
+class RequestValidator { /* 100 строк */ }
+class ResponseHandler { /* 150 строк */ }
+```
+
+---
+
+## 4. Вложенные классы
+
+### Правило
+
+**Вложенные классы запрещены**, за исключением случаев, когда они необходимы для реализации паттернов (например, кастомный `Builder` внутри entity-класса).
+
+- ✅ Кастомный `Builder` внутри entity-класса (Request.Builder)
+- ❌ Вспомогательные классы, которые можно вынести
+- ❌ Статические вложенные классы для утилит (лучше вынести в отдельный файл)
+
+```java
+// ✅ Правильно — Builder для паттерна
+public class Request {
+    private static class Builder { /* ... */ }
+}
+
+// ❌ Неправильно — вспомогательный класс
+public class HttpClientImpl {
+    private static class HelperUtils { /* можно вынести */ }
+}
+
+// ✅ Правильно — отдельный файл
+// HelperUtils.java
+public final class HelperUtils { /* ... */ }
+```
+
+---
+
+## 5. Lombok
 
 | Аннотация | Где использовать | Пример |
 |---|---|---|
@@ -84,7 +136,7 @@ public class Example {
 
 ---
 
-## 4. Builder Pattern
+## 6. Builder Pattern
 
 ```java
 // ✅ Правильно
@@ -122,7 +174,7 @@ public class Request { }
 
 ---
 
-## 5. Spring Boot
+## 7. Spring Boot
 
 ```java
 // ✅ Правильно
@@ -145,7 +197,7 @@ public class HttpClientConfiguration { }
 
 ---
 
-## 6. Исключения
+## 8. Исключения
 
 ```java
 // ✅ Правильно
@@ -174,7 +226,7 @@ throw new Exception("Configuration is null");
 
 ---
 
-## 7. Логирование
+## 9. Логирование
 
 ```java
 // ✅ Правильно — LogService
@@ -191,7 +243,7 @@ logger.debug("Error occurred");
 
 ---
 
-## 8. Форматирование
+## 10. Форматирование
 
 ```java
 // ✅ K&R style
@@ -228,7 +280,7 @@ public Response execute(Request request) { }
 
 ---
 
-## 9. JavaDoc
+## 11. JavaDoc
 
 ```java
 // ✅ Обязателен для публичных
@@ -258,7 +310,7 @@ public Response execute(Request request) { }
 
 ---
 
-## 10. Тесты
+## 12. Тесты
 
 ```java
 // ✅ Правильно
@@ -297,7 +349,7 @@ assertThat(status).isEqualTo(200);
 
 ---
 
-## 11. Статические импорты
+## 13. Статические импорты
 
 ```java
 // ✅ Правильно

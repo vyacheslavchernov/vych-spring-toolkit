@@ -138,4 +138,34 @@ public class HttpClientConfig {
      * <p>По умолчанию — {@code true}.</p>
      */
     private boolean cookieStorageEnabled = true;
+
+    /**
+     * Включает кеширование HTTP-запросов в памяти.
+     * <p>
+     * Если {@code true}, GET-запросы с флагом {@code cached} кешируются в памяти
+     * для уменьшения количества повторных запросов к серверу.
+     * </p>
+     * <p>По умолчанию — {@code false}.</p>
+     */
+    private boolean cacheEnabled = false;
+
+    /**
+     * Глобальный TTL кеширования в секундах.
+     * <p>
+     * Применяется по умолчанию для всех кешированных запросов.
+     * Может быть переопределён на уровне запроса через
+     * {@link ru.vych.http.impl.entities.Request.Builder#setCacheTtl(long, java.util.concurrent.TimeUnit)}.
+     * </p>
+     * <p>По умолчанию — {@code 300} (5 минут).</p>
+     */
+    private long defaultCacheTtlSeconds = 300;
+
+    /**
+     * Максимальное количество записей в кеше.
+     * <p>
+     * При переполнении кеша используется LRU-eviction — удаляется самая старая запись.
+     * </p>
+     * <p>По умолчанию — {@code 500}.</p>
+     */
+    private int cacheMaxSize = 500;
 }

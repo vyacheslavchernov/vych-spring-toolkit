@@ -22,6 +22,19 @@ public final class HttpExceptionsMessages {
     /** Log service is null. */
     public static String CREATION_ERROR_LOG_SERVICE_IS_NULL = "Ошибка создания клиента: logService не может быть null";
 
+    /** Cache max size is invalid. */
+    public static String CREATION_ERROR_CACHE_MAX_SIZE_INVALID
+            = "Ошибка создания клиента: cacheMaxSize должен быть больше нуля";
+    /** Default cache TTL is invalid. */
+    public static String CREATION_ERROR_CACHE_TTL_INVALID
+            = "Ошибка создания клиента: defaultCacheTtlSeconds должен быть больше нуля";
+    /** Cache TTL is invalid for request. */
+    public static String REQUEST_ERROR_CACHE_TTL_INVALID
+            = "TTL кеширования должен быть больше нуля";
+    /** Hash algorithm is not available. */
+    public static String CREATION_ERROR_HASH_ALGORITHM_NOT_AVAILABLE
+            = "Ошибка создания клиента: алгоритм хэширования недоступен";
+
     /** Generic request error. */
     public static String REQUEST_ERROR_GENERIC = "Ошибка при отправке запроса";
     /** HTTP method is not set. */

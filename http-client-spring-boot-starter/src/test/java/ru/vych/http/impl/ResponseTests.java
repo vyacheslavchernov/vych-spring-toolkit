@@ -107,15 +107,15 @@ public class ResponseTests {
     @DisplayName("Тест каста тела ответа")
     @SneakyThrows
     public void bodyCastingTest(ResponseBodyCastingCheckData checkData) {
-        var response = new Response(
+        var request = Request.builder()
+                .setMethod(HttpMethod.GET)
+                .setResponseClass(checkData.getResponseClass())
+                .build();
+
+        var response = Response.of(
                 "uuid",
-                Request.builder()
-                        .setMethod(HttpMethod.GET)
-                        .setResponseClass(checkData.getResponseClass())
-                        .build(),
+                request,
                 200,
-                checkData.getBodyBytes(),
-                checkData.getRawBody(),
                 checkData.getBody(),
                 new ArrayList<>()
         );
