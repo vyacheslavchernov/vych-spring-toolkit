@@ -38,6 +38,8 @@ public class GetTestController {
     public static final String GET_PATH_AND_QUERY_ENDPOINT = "/getPathNQuery";
     /** Эндпоинт для получения заголовков. */
     public static final String GET_HEADERS_ENDPOINT = "/getHeaders";
+    /** Эндпоинт для тестов инвалидации кеша (GET + POST). */
+    public static final String GET_CACHE_INVALIDATE_ENDPOINT = "/cacheInvalidate";
 
     /** Текст приветствия. */
     public static final String HELLO_TEXT = "Hello, World!";
@@ -121,5 +123,40 @@ public class GetTestController {
     public Response getHeaders(@Context HttpHeaders httpHeaders) {
         Map<String, List<String>> headers = httpHeaders.getRequestHeaders();
         return Response.ok().entity(headers).build();
+    }
+
+    /**
+     * GET endpoint для тестов инвалидации кеша — возвращает текст.
+     * @return ответ с текстом
+     */
+    @GET
+    @Path(GET_CACHE_INVALIDATE_ENDPOINT)
+    @Produces(TEXT_PLAIN)
+    public Response getCacheInvalidate() {
+        return Response.ok().entity("cache-invalidate-response").build();
+    }
+
+    /**
+     * POST endpoint для тестов инвалидации кеша — эхо тела.
+     * @param body тело запроса
+     * @return ответ с эхом тела
+     */
+    @POST
+    @Path(GET_CACHE_INVALIDATE_ENDPOINT)
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    public Response postCacheInvalidate(String body) {
+        return Response.ok().entity(body).build();
+    }
+
+    /**
+     * DELETE endpoint для тестов инвалидации кеша.
+     * @return ответ с результатом
+     */
+    @DELETE
+    @Path(GET_CACHE_INVALIDATE_ENDPOINT)
+    @Produces(TEXT_PLAIN)
+    public Response deleteCacheInvalidate() {
+        return Response.ok().entity("deleted").build();
     }
 }

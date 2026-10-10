@@ -37,6 +37,14 @@ scope: package
 
 Политики приёма cookies: `ACCEPT_ALL` (все домены), `ACCEPT_NONE` (никакие), `ACCEPT_ORIGINAL_SERVER` (same-origin). Используется при настройке `CookieHandler` в `HttpClientConfig`.
 
+### `UrlUtils` (final class)
+
+Утилитный класс для работы с URL. Содержит статические методы для извлечения пути из URL.
+
+**Методы:** `extractUrlPath(String)` — извлекает путь без query-параметров; `extractParentUrlPath(String)` — извлекает родительский путь (например, `/api/users` из `/api/users/123`).
+
+**Lombok:** не используется, private constructor для запрета инстанцирования.
+
 ## Зависимости
 
 - `HttpMethod` → `HttpClient`, `Request.getMethod()`

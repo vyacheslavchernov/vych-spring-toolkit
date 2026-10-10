@@ -1,6 +1,6 @@
 ---
 name: project-coding-standards-checker
-description: Проверяет соответствие кода проекта правилам, конвенциям и гайдлайнам, описанным в docs/coding-standards.md и связанных документах. Применяется ко всему проекту, отдельному модулю, файлу, diff или изменениям в ветке. Проверяет: naming conventions, структуру классов, Lombok-аннотации, builder pattern, Spring Boot конвенции, исключения, логирование, форматирование, JavaDoc, конвенции тестов. НЕ запускает checkstyle — только статический анализ кода.
+description: Проверяет соответствие кода проекта правилам, конвенциям и гайдлайнам, описанным в docs/coding-standards.md и связанных документах. Применяется ко всему проекту, отдельному модулю, файлу, diff или изменениям в ветке. Проверяет: naming conventions, структуру классов, декомпозицию файлов, вложенные классы, Lombok-аннотации, builder pattern, Spring Boot конвенции, исключения, логирование, форматирование, JavaDoc, конвенции тестов. НЕ запускает checkstyle — только статический анализ кода.
 ---
 
 # Project Coding Standards Checker
@@ -133,14 +133,16 @@ git diff --staged -- '*.java'
 **Ключевые категории:**
 1. **Naming** — пакеты, классы, методы, переменные, константы
 2. **Структура класса** — порядок элементов, импорты
-3. **Lombok** — какие аннотации где использовать
-4. **Builder Pattern** — кастомный inner class, валидация в `build()`
-5. **Spring Boot** — `@AutoConfiguration`, constructor injection
-6. **Исключения** — checked, naming, конструкторы, централизация сообщений
-7. **Логирование** — только `LogService` или `System.out/err` для аппендеров
-8. **Форматирование** — K&R, switch arrow, pattern matching, `List.of()`/`Map.of()`
-9. **JavaDoc** — обязателен для публичных классов/методов/полей
-10. **Тесты** — `@DisplayName`, `@SneakyThrows`, AssertJ `.describedAs()`, naming
+3. **Декомпозиция файлов** — приоритет декомпозиции при разрастании, лимит 1000 строк
+4. **Вложенные классы** — запрет, исключения для паттернов (Builder)
+5. **Lombok** — какие аннотации где использовать
+6. **Builder Pattern** — кастомный inner class, валидация в `build()`
+7. **Spring Boot** — `@AutoConfiguration`, constructor injection
+8. **Исключения** — checked, naming, конструкторы, централизация сообщений
+9. **Логирование** — только `LogService` или `System.out/err` для аппендеров
+10. **Форматирование** — K&R, switch arrow, pattern matching, `List.of()`/`Map.of()`
+11. **JavaDoc** — обязателен для публичных классов/методов/полей
+12. **Тесты** — `@DisplayName`, `@SneakyThrows`, AssertJ `.describedAs()`, naming
 
 ## Статические импорты
 

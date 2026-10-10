@@ -31,6 +31,36 @@ scope: package
 
 **Lombok:** не используется.
 
+### `HttpClientCache`
+
+Внутренний LRU-кеш для HTTP-клиента. Хранит кешированные ответы в памяти с поддержкой TTL, LRU-eviction и генерации SHA-256 ключей из параметров запроса.
+
+**Ключевые методы:** `get(Request)` — поиск записи (cache hit/miss с ленивым удалением истёкших), `put(Request, Response, long)` — сохранение с LRU-eviction при переполнении, `invalidateByUrlPrefix(String)` — инвалидация по паттерну URL, `clear()`, `size()`, `generateCacheKey(Request)` — SHA-256 хеш из метода, URL, query-параметров и payload.
+
+**Структура:** `ConcurrentHashMap<String, CachedEntry>` для хранения записей + `ConcurrentHashMap<String, Set<String>> urlToCacheKeys` для маппинга URL → keys + `ConcurrentHashMap<String, Long> accessTimestamps` для LRU-поведения (timestamp последнего доступа в nanoTime). Ключ — base64 SHA-256 хеш.
+
+**Генерация ключа:** SHA-256 хеш из HTTP-метода, URL, path-параметров, отсортированных query-параметров и payload. Base64-представление.
+
+**Потокобезопасность:** `ConcurrentHashMap` + обновление `accessTimestamps` при каждом access для LRU-поведения.
+
+**Lombok:** не используется.
+
+### `HttpClientCacheManager`
+
+Менеджер кэширования HTTP-запросов. Инкапсузирует логику hit/miss, инвалидации, парсинга `Cache-Control` и логирования.
+
+**Ключевые методы:** `executeWithCache(Request)` — выполнение с поддержкой кеша (hit → interceptor; miss → server → cache), `invalidateForWrite(Request)` — инвалидация кеша для WRITE-запросов.
+
+**Поведение:** уважает `Cache-Control: no-store` (запрет кеша) и `Cache-Control: max-age=N` (ограничение TTL). WRITE-запросы инвалидируют кеш по точному URL и родительскому паттерну.
+
+**Lombok:** не используется.
+
+### `HttpClientCacheConfig`
+
+Конфигурация для менеджера кеша. Содержит `LogService`, `serviceCode`, `clientUuid`, `defaultCacheTtlSeconds` и список `ResponseInterceptor`.
+
+**Lombok:** не используется, ручной getter.
+
 ## Зависимости
 
 - `HttpClientImpl` → `HttpClientLogger`, `Request.Builder`, `Response`, `HttpClientConfig`, `ObjectMapper`
@@ -39,6 +69,7 @@ scope: package
 ## Подпакеты
 
 - [`storage`](./impl/storage.md) — `CookieFileStorage` для persistent cookie storage
+- [`cache`](./impl/cache.md) — `HttpClientCache`, `HttpClientCacheManager`, `HttpClientCacheConfig`
 
 ## Связанные пакеты
 

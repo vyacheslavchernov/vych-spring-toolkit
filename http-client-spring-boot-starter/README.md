@@ -188,6 +188,9 @@ List<Header> headers = response.getHeaders();
 | `logRequests` | `boolean` | `true`                | Логировать запросы и ответы через logger-spring-boot-starter |
 | `cookieStorageDir` | `Path` | `~/.config/vych-spring-toolkit/cookies/` | Каталог для persistent cookie-файлов |
 | `cookieStorageEnabled` | `boolean` | `true` | Включить persistent storage cookies (сохранение/восстановление между запусками) |
+| `cacheEnabled` | `boolean` | `false` | Включить кэширование HTTP-запросов в памяти |
+| `defaultCacheTtlSeconds` | `long` | `300` | Глобальный TTL кеша в секундах |
+| `cacheMaxSize` | `int` | `500` | Максимальное количество записей в кешe (LRU-eviction при переполнении) |
 
 ## Управление cookie
 
@@ -367,3 +370,92 @@ public class InterceptorConfig {
 | Валидация ответов | `ResponseInterceptor` | Проверяет статус-код и тело ответа |
 | Retry-логика | `ResponseInterceptor` | Повторяет запрос при 5xx |
 | Добавление заголовков | `RequestInterceptor` | Добавляет `X-Request-Id`, `Content-Type` |
+
+## Кэширование
+
+Модуль поддерживает LRU-кеш HTTP-запросов в памяти для уменьшения количества повторных запросов к серверу.
+
+### Включение кеша
+
+```java
+HttpClientConfig config = new HttpClientConfig("MyService")
+        .setRoot("https://api.example.com")
+        .setCacheEnabled(true)
+        .setDefaultCacheTtlSeconds(600)
+        .setCacheMaxSize(1000);
+```
+
+| Свойство | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `cacheEnabled` | `boolean` | `false` | Включить кэширование HTTP-запросов |
+| `defaultCacheTtlSeconds` | `long` | `300` | Глобальный TTL кеша в секундах |
+| `cacheMaxSize` | `int` | `500` | Максимальное количество записей (LRU-eviction при переполнении) |
+
+### GET-запрос с кешированием
+
+```java
+Request request = Request.builder()
+        .method(HttpMethod.GET)
+        .url("/api/users/123")
+        .setCached(true)
+        .responseClass(User.class)
+        .build();
+
+Response response = httpClient.execute(request);
+// Первый вызов: response.isCached() == false (получено с сервера, сохранено в кеш)
+// Второй вызов: response.isCached() == true (получено из кеша)
+User user = response.getCastedBody();
+```
+
+### Переопределение TTL на уровне запроса
+
+```java
+Request request = Request.builder()
+        .method(HttpMethod.GET)
+        .url("/api/config")
+        .setCached(true)
+        .setCacheTtl(30, TimeUnit.SECONDS) // переопределяем глобальный 600s
+        .responseClass(Config.class)
+        .build();
+
+Response response = httpClient.execute(request);
+```
+
+### WRITE-запрос с инвалидацией кеша
+
+WRITE-запросы (POST, PUT, PATCH, DELETE) с флагом `cached=true` инвалидируют кеш по паттерну URL:
+
+```java
+Request request = Request.builder()
+        .method(HttpMethod.POST)
+        .url("/api/users")
+        .setCached(true) // инвалидирует кеш для /api/users и /api
+        .contentType(MediaType.APPLICATION_JSON)
+        .payload(newUser)
+        .responseClass(User.class)
+        .build();
+
+Response response = httpClient.execute(request);
+```
+
+### Проверка источника ответа
+
+```java
+Response response = httpClient.execute(request);
+
+if (response.isCached()) {
+    System.out.println("Ответ из кеша, помещён: " + response.getCachedAt());
+} else {
+    System.out.println("Ответ получен с сервера");
+}
+```
+
+### Поведение Cache-Control
+
+Менеджер кеша уважает заголовки `Cache-Control` от сервера:
+
+- `Cache-Control: no-store` — ответ НЕ сохраняется в кеш
+- `Cache-Control: max-age=N` — TTL кеша ограничивается значением `N`
+- `Cache-Control: no-cache` или `max-age=0` — ответ не кэшируется
+
+TTL кеша определяется как `min(requestTtl, serverMaxAge)`.

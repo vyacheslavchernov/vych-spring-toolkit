@@ -2,6 +2,7 @@ package ru.vych.http.impl.entities;
 
 import lombok.*;
 import lombok.experimental.Accessors;
+import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_CACHE_TTL_INVALID;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_CONTENT_TYPE;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.REQUEST_ERROR_INVALID_METHOD;
 
@@ -9,6 +10,7 @@ import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.exceptions.HttpClientInvalidRequestException;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Описание HTTP-запроса для выполнения через {@link ru.vych.http.impl.HttpClient}.
@@ -101,6 +103,27 @@ public class Request {
     private Object payload;
 
     /**
+     * Флаг кеширования запроса.
+     * <p>
+     * Если {@code true}, результат запроса будет кеширован в памяти
+     * (при включённом кешировании в {@link ru.vych.http.config.HttpClientConfig}).
+     * </p>
+     * <p>По умолчанию — {@code false}.</p>
+     */
+    @Setter
+    private boolean cached;
+
+    /**
+     * TTL кеширования для данного запроса в секундах.
+     * <p>
+     * Переопределяет глобальный TTL из {@link ru.vych.http.config.HttpClientConfig#getDefaultCacheTtlSeconds()}.
+     * Если {@code null}, используется глобальный TTL.
+     * </p>
+     */
+    @Setter
+    private Long cacheTtl;
+
+    /**
      * Создаёт новый {@code Builder} для построения {@link Request}.
      *
      * @return новый экземпляр Builder
@@ -131,6 +154,8 @@ public class Request {
         private Object payload;
 
         private String contentType;
+        private boolean cached;
+        private Long cacheTtl;
 
         /**
          * Устанавливает query-параметры запроса.
@@ -191,6 +216,41 @@ public class Request {
         }
 
         /**
+         * Устанавливает флаг кеширования запроса.
+         * <p>
+         * Если {@code true}, результат запроса будет кеширован в памяти
+         * (при включённом кешировании в {@link ru.vych.http.config.HttpClientConfig}).
+         * </p>
+         *
+         * @param cached флаг кеширования
+         * @return этот же builder для цепочечных вызовов
+         */
+        public Builder setCached(boolean cached) {
+            this.cached = cached;
+            return this;
+        }
+
+        /**
+         * Устанавливает TTL кеширования для данного запроса.
+         * <p>
+         * Переопределяет глобальный TTL из {@link ru.vych.http.config.HttpClientConfig#getDefaultCacheTtlSeconds()}.
+         * </p>
+         *
+         * @param ttl     время жизни записи в кеше
+         * @param unit    единица времени
+         * @return этот же builder для цепочечных вызовов
+         * @throws HttpClientInvalidRequestException если TTL меньше или равен нулю
+         */
+        public Builder setCacheTtl(long ttl, TimeUnit unit) throws HttpClientInvalidRequestException {
+            long seconds = unit.toSeconds(ttl);
+            if (seconds <= 0) {
+                throw new HttpClientInvalidRequestException(REQUEST_ERROR_CACHE_TTL_INVALID);
+            }
+            this.cacheTtl = seconds;
+            return this;
+        }
+
+        /**
          * Создаёт {@link Request} из установленных параметров.
          * <p>
          * <b>Валидация:</b>
@@ -223,7 +283,7 @@ public class Request {
             return new Request(
                     url, method, queryParams,
                     pathParams, headers, responseClass,
-                    payload
+                    payload, cached, cacheTtl
             );
         }
     }

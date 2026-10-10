@@ -3,6 +3,8 @@ package ru.vych.http.impl.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -16,7 +18,6 @@ import java.util.List;
  * @see Request
  * @see ru.vych.http.impl.HttpClient#execute(Request)
  */
-@AllArgsConstructor
 @Getter
 @ToString
 @EqualsAndHashCode
@@ -26,12 +27,12 @@ public class Response {
      * Уникальный идентификатор исходного запроса.
      * Совпадает с {@link Request#getUuid()}.
      */
-    private final String uuid;
+    private String uuid;
 
     /**
      * Исходный запрос, по которому получен данный ответ.
      */
-    private final Request request;
+    private Request request;
 
     /**
      * HTTP статус-код ответа (200, 404, 500 и т. д.).
@@ -71,6 +72,78 @@ public class Response {
      */
     @Setter
     private List<Header> headers;
+
+    /**
+     * Флаг, указывающий, возвращён ли ответ из кеша.
+     * <p>
+     * {@code true} — ответ возвращён из локального кеша.
+     * {@code false} — ответ получен с сервера.
+     * </p>
+     */
+    @Setter
+    private boolean isCached;
+
+    /**
+     * Время помещения ответа в кеш.
+     * <p>
+     * Заполняется только если {@link #isCached} равно {@code true}.
+     * {@code null} если ответ получен с сервера.
+     * </p>
+     */
+    @Setter
+    private Instant cachedAt;
+
+    /**
+     * Создаёт новый экземпляр {@link Response} без учёта кеша.
+     *
+     * @param uuid      уникальный идентификатор запроса
+     * @param request   исходный запрос
+     * @param status    HTTP статус-код
+     * @param body      десериализованное тело ответа
+     * @param headers   HTTP-заголовки ответа
+     * @return новый экземпляр Response
+     */
+    public static Response of(String uuid, Request request, Integer status,
+                              Object body, List<Header> headers) {
+        Response response = new Response();
+        response.uuid = uuid;
+        response.request = request;
+        response.status = status;
+        response.body = body;
+        response.headers = headers;
+        response.isCached = false;
+        response.cachedAt = null;
+        // rawBody устанавливается из body, если это String
+        if (body instanceof String str) {
+            response.rawBody = str;
+            response.rawBytes = str.getBytes(StandardCharsets.UTF_8);
+        }
+        return response;
+    }
+
+    /**
+     * Создаёт новый экземпляр {@link Response} из кешированного ответа.
+     *
+     * @param base       базовый ответ для клонирования
+     * @param uuid       уникальный идентификатор запроса
+     * @param request    исходный запрос
+     * @param cachedAt   время помещения в кеш
+     * @return новый экземпляр Response с флагом isCached=true
+     */
+    public static Response cached(Response base, String uuid, Request request,
+                                  Instant cachedAt) {
+        Response response = new Response();
+        response.uuid = uuid;
+        response.request = request;
+        response.status = base.status;
+        response.rawBytes = base.rawBytes;
+        response.rawBody = base.rawBody;
+        response.body = base.body;
+        response.headers = base.headers;
+        response.isCached = true;
+        response.cachedAt = cachedAt;
+        return response;
+    }
 
     /**
      * Возвращает тело ответа, приведённое к типу, указанному в исходном запросе.

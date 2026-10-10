@@ -19,3 +19,4 @@
 - [Cookies](cookies-spec.md) — изолированное cookie-хранилище и cookie policies
 - [Logging](logging-spec.md) — логирование запросов и ответов через LogService
 - [Error Handling](error-handling-spec.md) — иерархия checked-исключений и условия их возникновения
+- [Caching](cache-spec.md) — кеширование GET-запросов в памяти, LRU-eviction, TTL, инвалидация по паттерну URL

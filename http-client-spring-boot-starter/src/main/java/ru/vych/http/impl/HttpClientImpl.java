@@ -4,9 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Getter;
+
 import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.common.CookiesPolicies;
-import ru.vych.http.impl.common.HttpStatus;
+import ru.vych.http.impl.common.HttpMethod;
 import ru.vych.http.impl.entities.CookieEntry;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
@@ -33,6 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
+import static ru.vych.http.impl.common.HttpMethod.*;
 import static ru.vych.http.impl.exceptions.HttpExceptionsMessages.*;
 
 /**
@@ -95,6 +97,23 @@ public class HttpClientImpl implements HttpClient {
      * Поток shutdown hook для финального сохранения cookies.
      */
     private Thread shutdownHook;
+
+    /**
+     * Внутренний кеш для HTTP-запросов.
+     * <p>
+     * Используется для кеширования GET-запросов с флагом {@code cached=true}.
+     * {@code null} если кеширование отключено в конфиге.
+     * </p>
+     */
+    private final HttpClientCache httpClientCache;
+
+    /**
+     * Менеджер кеширования.
+     * <p>
+     * Инкапсузирует логику работы с кешем: hit/miss, инвалидацию, Cache-Control.
+     * </p>
+     */
+    private final HttpClientCacheManager cacheManager;
 
     /**
      * Создаёт и настраивает экземпляр HTTP-клиента.
@@ -173,6 +192,10 @@ public class HttpClientImpl implements HttpClient {
         // Инициализация persistent storage
         this.cookieFileStorage = initPersistentStorage();
 
+        // Инициализация кеширования
+        this.httpClientCache = initCache();
+        this.cacheManager = initCacheManager();
+
         // Регистрация shutdown hook для финального сохранения cookies
         if (cookieFileStorage != null) {
             this.shutdownHook = new Thread(this::shutdown, "cookie-storage-shutdown-" + clientUuid);
@@ -187,22 +210,6 @@ public class HttpClientImpl implements HttpClient {
         );
     }
 
-    /**
-     * Выполняет HTTP-запрос и возвращает результат.
-     * <p>
-     * Процесс выполнения:
-     * <ol>
-     *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.RequestInterceptor}.</li>
-     *   <li>Формируется и отправляется HTTP-запрос.</li>
-     *   <li>Ответ парсится и десериализуется.</li>
-     *   <li>Выполняются все {@link ru.vych.http.impl.interceptors.ResponseInterceptor}.</li>
-     * </ol>
-     * </p>
-     *
-     * @param request запрос для выполнения
-     * @return результат выполнения запроса
-     * @throws ru.vych.http.impl.exceptions.HttpClientException если произошла ошибка при выполнении
-     */
     @Override
     public Response execute(Request request) throws HttpClientException {
         requestInterceptors.forEach(filter -> {
@@ -213,16 +220,28 @@ public class HttpClientImpl implements HttpClient {
             filter.handle(this, request);
         });
         httpClientLogger.debug(config.getServiceCode(), request.getUuid(), "Отправка Http-запроса", request);
+        Response response;
 
-        Response response = switch (request.getMethod()) {
-            case GET -> get(request);
-            case POST -> post(request);
-            case PUT -> put(request);
-            case DELETE -> delete(request);
-            case PATCH -> patch(request);
-            case HEAD -> head(request);
-            case OPTIONS -> options(request);
-        };
+        // Проверка кеша для GET-запросов с флагом cached=true
+        if (config.isCacheEnabled() && request.isCached()) {
+            response = executeWithCache(request);
+        } else {
+            response = switch (request.getMethod()) {
+                case GET -> get(request);
+                case POST -> post(request);
+                case PUT -> put(request);
+                case DELETE -> delete(request);
+                case PATCH -> patch(request);
+                case HEAD -> head(request);
+                case OPTIONS -> options(request);
+            };
+        }
+
+        // Инвалидация кеша для WRITE-запросов с флагом cached=true
+        if (config.isCacheEnabled() && request.isCached()
+                && isWriteMethod(request.getMethod())) {
+            cacheManager.invalidateForWrite(request);
+        }
 
         responseInterceptors.forEach(filter -> {
             httpClientLogger.debug(
@@ -234,6 +253,99 @@ public class HttpClientImpl implements HttpClient {
         httpClientLogger.debug(config.getServiceCode(), request.getUuid(), "Получен ответ", response);
 
         return response;
+    }
+
+    /**
+     * Выполняет запрос с поддержкой кеша, делегируя выполнение менеджеру кеша.
+     *
+     * @param request запрос с флагом {@code cached=true}
+     * @return результат выполнения запроса
+     * @throws HttpClientException если произошла ошибка при выполнении
+     */
+    private Response executeWithCache(Request request) throws HttpClientException {
+        try {
+            return cacheManager.executeWithCache(request);
+        } catch (Exception e) {
+            if (e instanceof HttpClientException) {
+                throw (HttpClientException) e;
+            }
+            throw new HttpClientExecuteRequestException(EXECUTE_ERROR_UNKNOWN, e);
+        }
+    }
+
+    /**
+     * Выполняет HTTP-запрос без участия кеширования (используется менеджером кеша при cache miss).
+     *
+     * @param request запрос для выполнения
+     * @return результат выполнения запроса
+     * @throws HttpClientException если произошла ошибка при выполнении
+     */
+    protected Response executeWithoutCache(Request request) throws HttpClientException {
+        return switch (request.getMethod()) {
+            case GET -> get(request);
+            case POST -> post(request);
+            case PUT -> put(request);
+            case DELETE -> delete(request);
+            case PATCH -> patch(request);
+            case HEAD -> head(request);
+            case OPTIONS -> options(request);
+        };
+    }
+
+    /**
+     * Инициализирует кеш HTTP-запросов.
+     *
+     * @return экземпляр кеша или {@code null}
+     * @throws HttpClientConfigurationException если конфигурация невалидна
+     */
+    private HttpClientCache initCache() throws HttpClientException {
+        if (!config.isCacheEnabled()) {
+            return null;
+        }
+        if (config.getCacheMaxSize() <= 0) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CACHE_MAX_SIZE_INVALID);
+        }
+        if (config.getDefaultCacheTtlSeconds() <= 0) {
+            throw new HttpClientConfigurationException(CREATION_ERROR_CACHE_TTL_INVALID);
+        }
+        return new HttpClientCache(config.getCacheMaxSize(), config.getDefaultCacheTtlSeconds(),
+                config.getServiceCode());
+    }
+
+    /**
+     * Инициализирует менеджер кеширования.
+     *
+     * @return менеджер кеширования или {@code null} если кеш отключён
+     */
+    private HttpClientCacheManager initCacheManager() {
+        if (httpClientCache == null) {
+            return null;
+        }
+        HttpClientCacheConfig cacheConfig = new HttpClientCacheConfig(
+                logService,
+                config.getServiceCode(),
+                clientUuid,
+                config.getDefaultCacheTtlSeconds(),
+                responseInterceptors
+        );
+        return new HttpClientCacheManager(
+                cacheConfig,
+                (Request req) -> executeWithoutCache(req),
+                httpClientCache
+        );
+    }
+
+    /**
+     * Проверяет, является ли HTTP-метод WRITE-методом.
+     *
+     * @param method HTTP-метод для проверки
+     * @return {@code true} если метод является POST, PUT, PATCH или DELETE
+     */
+    private boolean isWriteMethod(HttpMethod method) {
+        return method == POST
+                || method == PUT
+                || method == PATCH
+                || method == DELETE;
     }
 
     /** HTTP GET-запрос. */
@@ -409,18 +521,7 @@ public class HttpClientImpl implements HttpClient {
     }
 
     /**
-     * Формирует полный URI для запроса.
-     * <p>
-     * Собирает URI из:
-     * <ol>
-     *   <li>Корневого URL из {@link HttpClientConfig#getRoot()}.</li>
-     *   <li>Пути из {@link ru.vych.http.impl.entities.Request#getUrl()}.</li>
-     *   <li>Path-параметров из {@link ru.vych.http.impl.entities.Request#getPathParams()}
-     *       — вставляются как части пути.</li>
-     *   <li>Query-параметров из {@link ru.vych.http.impl.entities.Request#getQueryParams()}
-     *       — форматируются как {@code key=value&...}.</li>
-     * </ol>
-     * </p>
+     * Формирует полный URI для запроса из корневого URL, пути и параметров.
      *
      * @param request запрос, содержащий путь и параметры
      * @return полный URI для HTTP-запроса
@@ -462,71 +563,32 @@ public class HttpClientImpl implements HttpClient {
         return URI.create(uri.toString());
     }
 
-    /**
-     * Кодирует корневой URL URI.
-     * <p>
-     * Разрешённые символы: {@code :} и {@code /}.
-     * </p>
-     *
-     * @param value исходное строковое значение
-     * @return закодированная строка
-     */
+    /** Кодирование корневого URL (разрешённые: : /). */
     private String encodeRoot(String value) {
         return encodeUri(value, c -> c == ':' || c == '/');
     }
 
-    /**
-     * Кодирует путь URI.
-     * <p>
-     * Разрешённые символы: {@code /}.
-     * </p>
-     *
-     * @param value исходное строковое значение
-     * @return закодированная строка
-     */
+    /** Кодирование пути URI (разрешённый: /). */
     private String encodePath(String value) {
         return encodeUri(value, c -> c == '/');
     }
 
-    /**
-     * Кодирует сегмент пути (path segment).
-     * <p>
-     * Разрешённые символы: none (все запрещённые символы кодируются).
-     * </p>
-     *
-     * @param value исходное строковое значение
-     * @return закодированная строка
-     */
+    /** Кодирование сегмента пути (все запрещённые символы кодируются). */
     private String encodePathSegment(String value) {
         return encodeUri(value, c -> false);
     }
 
-    /**
-     * Кодирует компонент query-строки.
-     * <p>
-     * Разрешённые символы: none (все запрещённые символы кодируются).
-     * </p>
-     *
-     * @param value исходное строковое значение
-     * @return закодированная строка
-     */
+    /** Кодирование query-компонента (все запрещённые символы кодируются). */
     private String encodeQueryComponent(String value) {
         return encodeUri(value, c -> false);
     }
 
     /**
      * Универсальное кодирование URI-компонента.
-     * <p>
-     * Кодирует строку в percent-encoding (RFC 3986), сохраняя
-     * уже закодированные последовательности (например {@code %20}).
-     * Символы, которые являются допустимыми в URI без кодирования
-     * (unreserved: A-Z, a-z, 0-9, -, ., _, ~), а также символы,
-     * разрешённые через {@code allowed}, не кодируются.
-     * </p>
      *
      * @param value   исходная строка; может быть {@code null}
      * @param allowed предикат, определяющий дополнительные разрешённые символы
-     * @return закодированная строка; пустая строка если {@code value == null}
+     * @return закодированная строка
      */
     private String encodeUri(String value, IntPredicate allowed) {
         if (value == null) {
@@ -566,14 +628,7 @@ public class HttpClientImpl implements HttpClient {
     }
 
     /**
-     * Проверяет, является ли символ допустимым в URI без кодирования.
-     * <p>
-     * Согласно RFC 3986, unreserved characters — это:
-     * {@code A-Z a-z 0-9 - . _ ~}.
-     * </p>
-     *
-     * @param c код символа
-     * @return {@code true}, если символ является unreserved
+     * Проверяет, является ли символ unreserved по RFC 3986 (A-Z a-z 0-9 - . _ ~).
      */
     private boolean isUnreserved(int c) {
         return c >= 'a' && c <= 'z'
@@ -586,13 +641,7 @@ public class HttpClientImpl implements HttpClient {
     }
 
     /**
-     * Проверяет, является ли байт шестнадцатеричной цифрой.
-     * <p>
-     * Поддерживаются цифры {@code 0-9}, буквы {@code A-F} и {@code a-f}.
-     * </p>
-     *
-     * @param value проверяемый байт
-     * @return {@code true}, если байт является шестнадцатеричной цифрой
+     * Проверяет, является ли байт шестнадцатеричной цифрой (0-9, A-F, a-f).
      */
     private boolean isHex(byte value) {
         var c = value & 0xFF;
@@ -604,12 +653,8 @@ public class HttpClientImpl implements HttpClient {
 
     /**
      * Добавляет HTTP-заголовки к builder'у запроса.
-     * <p>
-     * Сначала добавляются заголовки из {@link HttpClientConfig#getHeaders()},
-     * затем — заголовки из {@link ru.vych.http.impl.entities.Request#getHeaders()}.
-     * Если заголовок с таким же именем уже существует, новое значение добавляется
-     * к существующему (HTTP-заголовки могут иметь несколько значений).
-     * </p>
+     *
+     * Заголовки из config добавляются первыми, затем — из request.
      *
      * @param builder builder для {@link HttpRequest}
      * @param request запрос, содержащий дополнительные заголовки
@@ -653,14 +698,7 @@ public class HttpClientImpl implements HttpClient {
     }
 
     /**
-     * Десериализует тело ответа в указанный класс.
-     * <p>
-     * <ul>
-     *   <li>{@code String.class} → возвращает тело как строку</li>
-     *   <li>{@code null}, {@code byte.class}, {@code byte[].class} → возвращает {@code null}</li>
-     *   <li>Любой другой класс → десериализует JSON через Jackson</li>
-     * </ul>
-     * </p>
+     * Десериализует тело ответа: String.class → строку, null/byte[].class → null, остальные → JSON.
      *
      * @param body          тело ответа в виде строки
      * @param responseClass целевой класс для десериализации
@@ -671,11 +709,9 @@ public class HttpClientImpl implements HttpClient {
         if (responseClass == String.class) {
             return body;
         }
-
         if (responseClass == null || responseClass == byte.class || responseClass == byte[].class) {
             return null;
         }
-
         try {
             return mapper.readValue(body, responseClass);
         } catch (JsonProcessingException e) {
@@ -688,38 +724,34 @@ public class HttpClientImpl implements HttpClient {
 
     /**
      * Формирует {@link Response} из сырого {@link HttpResponse}.
-     * <p>
-     * Декодирует тело в UTF-8, извлекает статус-код и заголовки.
-     * Если статус OK и указан {@code responseClass} — десериализует body в этот класс.
-     * В противном случае body хранится как raw-строка.
-     * </p>
      *
-     * @param httpResponse сырой HTTP-ответ от {@code java.net.http.HttpClient}
-     * @param request      исходный запрос, содержащий {@code responseClass}
+     * @param httpResponse сырой HTTP-ответ
+     * @param request      исходный запрос
      * @return сконструированный {@link Response}
-     * @throws ru.vych.http.impl.exceptions.HttpClientHandleResponseException если не удалось десериализовать body
-     * @throws ru.vych.http.impl.exceptions.HttpClientException если произошла ошибка при обработке ответа
+     * @throws HttpClientException если произошла ошибка при обработке ответа
      */
     protected Response buildResponse(HttpResponse<byte[]> httpResponse, Request request) throws HttpClientException {
-        String bodyText = new String(httpResponse.body(), StandardCharsets.UTF_8);
+        byte[] bodyBytes = httpResponse.body();
+        String bodyText = bodyBytes != null ? new String(bodyBytes, StandardCharsets.UTF_8) : null;
         var rsType = request.getResponseClass();
-
-        // Сохраняем cookies из ответа
         URI uri = buildUri(request);
         parseSetCookiesFromResponse(httpResponse, uri);
 
-        return new Response(
+        Response response = Response.of(
                 request.getUuid(),
                 request,
                 httpResponse.statusCode(),
-                httpResponse.body(),
-                (httpResponse.statusCode() != HttpStatus.OK
-                        || rsType != null && rsType != byte.class && rsType != byte[].class)
-                        ? bodyText
-                        : null,
                 mapBodyToResponseClass(bodyText, request.getResponseClass()),
                 extractHeaders(httpResponse)
         );
+
+        if (rsType == byte[].class || rsType == byte.class) {
+            response.setRawBytes(bodyBytes);
+        } else {
+            response.setRawBody(bodyText);
+            response.setRawBytes(bodyBytes);
+        }
+        return response;
     }
 
     @Override
@@ -748,13 +780,6 @@ public class HttpClientImpl implements HttpClient {
 
     /**
      * Проверяет, истёк ли cookie по TTL.
-     * <p>
-     * Cookie считается истёкшим если:
-     * <ul>
-     *   <li>maxAge <= 0</li>
-     *   <li>maxAge > 0, но createdAt + maxAge * 1000 &lt; currentMillis</li>
-     * </ul>
-     * </p>
      *
      * @param cookie cookie для проверки
      * @param timestamps мапа "имя cookie → timestamp создания" для данного хоста
@@ -779,7 +804,6 @@ public class HttpClientImpl implements HttpClient {
         }
 
         long maxAge = maxAgeObj;
-
         // Cookie с maxAge > 0 — проверяем по timestamp создания
         if (timestamps != null) {
             String cookieName = cookie.getName();
@@ -788,7 +812,6 @@ public class HttpClientImpl implements HttpClient {
                 return createdAt + maxAge * 1000L <= System.currentTimeMillis();
             }
         }
-
         // Если timestamp не найден — cookie не истёк (первый запрос)
         return false;
     }
@@ -813,13 +836,6 @@ public class HttpClientImpl implements HttpClient {
     /**
      * Парсит заголовок {@code Set-Cookie} из HTTP-ответа и сохраняет cookies
      * во внутреннее хранилище с учётом {@link CookiesPolicies}.
-     * <p>
-     * Если политика {@link CookiesPolicies#ACCEPT_ALL} — все cookies принимаются.
-     * Если {@link CookiesPolicies#ACCEPT_NONE} — cookies игнорируются.
-     * Если {@link CookiesPolicies#ACCEPT_ORIGINAL_SERVER} — cookies принимаются
-     * только если хост ответа совпадает с корневым URL клиента.
-     * После сохранения cookies запускается асинхронное автосохранение в файл.
-     * </p>
      *
      * @param httpResponse HTTP-ответ
      * @param uri          URI ответа (для определения хоста)

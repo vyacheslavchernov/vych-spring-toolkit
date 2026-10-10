@@ -6,10 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.vych.App;
+import ru.vych.http.config.HttpClientBuilder;
+import ru.vych.http.config.HttpClientConfig;
 import ru.vych.http.impl.HttpClient;
 import ru.vych.http.impl.entities.Header;
 import ru.vych.http.impl.entities.Request;
 import ru.vych.http.impl.entities.Response;
+import ru.vych.logger.impl.LogService;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,14 @@ public abstract class BaseHttpTest {
     @Autowired
     @Qualifier(DEFAULT_CLIENT_SERVICE_CODE)
     protected HttpClient defaultClient;
+
+    /** Билдер HTTP клиента. */
+    @Autowired
+    protected HttpClientBuilder httpClientBuilder;
+
+    /** Log service для создания тестовых клиентов. */
+    @Autowired
+    protected LogService logService;
 
     /**
      * Проверка статус-кода ответа.
@@ -166,5 +177,62 @@ public abstract class BaseHttpTest {
         assertThat(response.getHeaders())
                 .describedAs("Ответ не содержит ожидаемого заголовка")
                 .contains(new Header(name, value));
+    }
+
+    /**
+     * Создаёт конфигурацию HTTP клиента с выключенным кешированием.
+     *
+     * @return конфигурация без кеширования
+     */
+    @Step("Создание конфигурации HTTP клиента с выключенным кешированием")
+    protected HttpClientConfig createConfigWithoutCache() {
+        return new HttpClientConfig("TestClient-" + System.currentTimeMillis())
+                .setRoot(getServerUrl())
+                .setCacheEnabled(false);
+    }
+
+    /**
+     * Создаёт конфигурацию HTTP клиента с включённым кешированием.
+     *
+     * @return конфигурация с кешированием
+     */
+    @Step("Создание конфигурации HTTP клиента с включённым кешированием")
+    protected HttpClientConfig createConfigWithCache() {
+        return new HttpClientConfig("TestClient-" + System.currentTimeMillis())
+                .setRoot(getServerUrl())
+                .setCacheEnabled(true)
+                .setDefaultCacheTtlSeconds(300)
+                .setCacheMaxSize(100);
+    }
+
+    /**
+     * Создаёт HTTP клиент из конфигурации.
+     *
+     * @param config конфигурация клиента
+     * @return HTTP клиент
+     */
+    @Step("Создание HTTP клиента из конфигурации")
+    @SneakyThrows
+    protected HttpClient createClient(HttpClientConfig config) {
+        return httpClientBuilder.build(config, logService, List.of(), List.of());
+    }
+
+    /**
+     * Закрывает HTTP клиент.
+     *
+     * @param client HTTP клиент
+     */
+    @Step("Закрытие HTTP клиента")
+    protected void closeClient(HttpClient client) {
+        // HttpClient не требует явного закрытия в текущей реализации
+    }
+
+    /**
+     * Возвращает URL сервера для тестов.
+     *
+     * @return URL сервера
+     */
+    protected String getServerUrl() {
+        return "http://localhost:9090";
     }
 }

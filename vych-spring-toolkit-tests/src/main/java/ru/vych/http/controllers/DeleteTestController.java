@@ -35,5 +35,17 @@ public class DeleteTestController {
         return Response.ok().entity(result).build();
     }
 
-
+    /**
+     * DELETE запрос с телом — эхо тела в ответе.
+     * @param body тело запроса
+     * @return ответ с эхом тела
+     */
+    @DELETE
+    @Path(DELETE_WITH_BODY_ENDPOINT)
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    public Response deleteWithBody(String body) {
+        Map<String, Object> result = Map.of("deleted", true, "body", body);
+        return Response.ok().entity(result).build();
+    }
 }
